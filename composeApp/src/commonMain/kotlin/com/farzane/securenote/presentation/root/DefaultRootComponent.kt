@@ -10,6 +10,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.decompose.value.Value
+import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
 import com.farzane.securenote.presentation.note_detail.DefaultNoteDetailComponent
 import kotlinx.serialization.Serializable
@@ -24,6 +25,7 @@ class DefaultRootComponent(
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
 
     private val getNoteByIdUseCase by inject<GetNoteByIdUseCase>()
+    private val noteExporter by inject<NoteExporter>()
 
 
     @Serializable
@@ -40,7 +42,7 @@ class DefaultRootComponent(
         childStack(
             source = navigation,
             serializer = kotlinx.serialization.serializer<Config>(),
-            initialConfiguration = Config.NoteList, // Start with List
+            initialConfiguration = Config.NoteList, 
             handleBackButton = true,
             childFactory = ::createChild
         )
@@ -55,7 +57,7 @@ class DefaultRootComponent(
                     getNotesUseCase = getNotesUseCase,
                     addNoteUseCase = addNoteUseCase,
                     deleteNoteUseCase = deleteNoteUseCase,
-
+                    noteExporter = noteExporter,
                     onNoteSelected = { noteId ->
                         navigation.push(Config.NoteDetail(noteId))
                     },

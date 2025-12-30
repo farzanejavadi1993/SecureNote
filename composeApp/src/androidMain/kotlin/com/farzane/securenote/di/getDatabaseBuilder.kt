@@ -3,6 +3,8 @@ package com.farzane.securenote.di
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.farzane.securenote.data.local.database.AppDatabase
+import com.farzane.securenote.data.repository.AndroidNoteExporter
+import com.farzane.securenote.domain.repository.NoteExporter
 import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
 
@@ -18,6 +20,6 @@ actual val platformModule = module {
             name = dbFile.absolutePath
         ).build()
     }
-
+    single<NoteExporter> { AndroidNoteExporter(androidContext()) }
 }
 

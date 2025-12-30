@@ -5,7 +5,6 @@ import com.farzane.securenote.domain.model.Note
 import kotlinx.coroutines.flow.Flow
 
 interface NoteRepository {
-    //fun getAllNotes(): Flow<List<Note>>
     fun getAllNotes(): Flow<Resource<List<Note>>>
     suspend fun insertNote(note: Note)
     suspend fun deleteNote(id: Long)

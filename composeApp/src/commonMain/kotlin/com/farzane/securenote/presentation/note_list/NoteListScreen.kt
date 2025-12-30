@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ImportExport
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -28,10 +29,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,13 +55,28 @@ fun NoteListScreen(
 ) {
 
     val state by component.state.subscribeAsState()
+    val snackBarHostState = remember { SnackbarHostState() }
     var isDialogOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.exportMessage){
+        state.exportMessage?.let { message ->
+            snackBarHostState.showSnackbar(message = message)
+        }
+    }
+
 
     Scaffold(
         modifier= modifier,
+        snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackBarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Secure Notes") },
+                actions = {
+                    // EXPORT BUTTON
+                    IconButton(onClick = { component.onEvent(NoteListIntent.ExportNotes) }) {
+                        Icon(Icons.Default.ImportExport, contentDescription = "Export")
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -133,7 +151,8 @@ fun NoteItemRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(note.content,
+                Text(
+                    note.content,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

@@ -5,6 +5,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.farzane.securenote.core.util.Resource
+import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNotesUseCase
@@ -17,6 +18,7 @@ class DefaultNoteListComponent(
     private val addNoteUseCase: AddNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val onNoteSelected: (Long) -> Unit,
+    private val noteExporter: NoteExporter
 ) : NoteListComponent, ComponentContext by componentContext {
     private val _state = MutableValue(NoteListState(isLoading = true))
     override val state: Value<NoteListState> = _state
@@ -39,6 +41,7 @@ class DefaultNoteListComponent(
                             error = null
                         )
                     }
+
                     is Resource.Success -> {
                         _state.value = _state.value.copy(
                             isLoading = false,
@@ -46,6 +49,7 @@ class DefaultNoteListComponent(
                             error = null
                         )
                     }
+
                     is Resource.Error -> {
                         _state.value = _state.value.copy(
                             isLoading = false,
@@ -61,16 +65,36 @@ class DefaultNoteListComponent(
         when (intent) {
             is NoteListIntent.AddNote -> {
                 scope.launch {
-                    addNoteUseCase(null,intent.title, intent.content)
+                    addNoteUseCase(null, intent.title, intent.content)
                 }
             }
+
             is NoteListIntent.DeleteNote -> {
                 scope.launch {
                     deleteNoteUseCase(intent.id)
                 }
             }
+
             is NoteListIntent.SelectNote -> {
                 onNoteSelected(intent.id)
+            }
+
+            is NoteListIntent.ExportNotes -> {
+                scope.launch {
+                    when (val result = noteExporter.exportNotes(_state.value.notes)) {
+                        is Resource.Success -> {
+                            _state.value = _state.value.copy(exportMessage = result.data)
+                        }
+
+                        is Resource.Error -> {
+                            _state.value = _state.value.copy(
+                                exportMessage = "Error: ${result.message}"
+                            )
+                        }
+
+                        else -> {}
+                    }
+                }
             }
         }
     }

@@ -39,6 +39,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(compose.materialIconsExtended)
 
             // Koin Dependency Injection
             implementation(libs.koin.core)
@@ -48,6 +49,10 @@ kotlin {
             //Room
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
+
+            // Decompose (Core logic + Compose UI helpers)
+            implementation(libs.decompose)
+            implementation(libs.decompose.extensions.compose)
 
             implementation(libs.essenty.lifecycle.coroutines)
         }

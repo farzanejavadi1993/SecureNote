@@ -13,6 +13,7 @@ composeHotReload = "1.0.0"
 composeMultiplatform = "1.9.3"
 junit = "4.13.2"
 kotlinx-coroutines = "1.10.2"
+essenty = "2.2.1"
 kotlin = "2.0.21"
 
 #Room
@@ -24,7 +25,10 @@ sqlite = "2.5.0-alpha01"
 koin = "4.0.2"
 koin-compose = "4.0.2"
 
-essenty = "2.2.1"
+#decompose
+decompose = "3.2.2"
+
+
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -50,6 +54,9 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-sqlite-bundled = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 
+# Decompose
+decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
+decompose-extensions-compose = { module = "com.arkivanov.decompose:extensions-compose", version.ref = "decompose" }
 
 essenty-lifecycle-coroutines = { module = "com.arkivanov.essenty:lifecycle-coroutines", version.ref = "essenty" }
 

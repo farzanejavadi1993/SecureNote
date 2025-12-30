@@ -1,14 +1,14 @@
 package com.farzane.securenote
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import com.farzane.securenote.presentation.note_list.NoteListScreen
+import com.farzane.securenote.presentation.root.RootComponent
+
 
 @Composable
-@Preview
-fun App() {
+fun App(rootComponent: RootComponent) {
     MaterialTheme {
-    Text("Hello World")
+        NoteListScreen(component = rootComponent.noteListComponent)
     }
 }

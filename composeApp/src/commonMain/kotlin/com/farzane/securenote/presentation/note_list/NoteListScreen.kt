@@ -86,7 +86,7 @@ fun NoteListScreen(
                         NoteItemRow(
                             note = note,
                             onNoteClick = {
-                              //navigate to detail screen
+                                component.onEvent(NoteListIntent.SelectNote(note.id ?: 0))
                             },
                             onDeleteClick = {
                                 component.onEvent(NoteListIntent.DeleteNote(note.id ?: 0))

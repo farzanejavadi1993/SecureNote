@@ -16,6 +16,7 @@ class DefaultNoteListComponent(
     private val getNotesUseCase: GetNotesUseCase,
     private val addNoteUseCase: AddNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
+    private val onNoteSelected: (Long) -> Unit,
 ) : NoteListComponent, ComponentContext by componentContext {
     private val _state = MutableValue(NoteListState(isLoading = true))
     override val state: Value<NoteListState> = _state
@@ -54,7 +55,6 @@ class DefaultNoteListComponent(
                 }
             }
         }
-
     }
 
     override fun onEvent(intent: NoteListIntent) {
@@ -68,6 +68,9 @@ class DefaultNoteListComponent(
                 scope.launch {
                     deleteNoteUseCase(intent.id)
                 }
+            }
+            is NoteListIntent.SelectNote -> {
+                onNoteSelected(intent.id)
             }
         }
     }

@@ -9,6 +9,7 @@ import kotlin.getValue
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.*
+import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
@@ -23,10 +24,8 @@ class DefaultRootComponent(
     private val getNotesUseCase by inject<GetNotesUseCase>()
     private val addNoteUseCase by inject<AddNoteUseCase>()
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
-
     private val getNoteByIdUseCase by inject<GetNoteByIdUseCase>()
     private val noteExporter by inject<NoteExporter>()
-
 
     @Serializable
     sealed interface Config {
@@ -36,16 +35,35 @@ class DefaultRootComponent(
         @Serializable
         data class NoteDetail(val noteId: Long?) : Config
     }
+
     private val navigation = StackNavigation<Config>()
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> =
         childStack(
             source = navigation,
             serializer = kotlinx.serialization.serializer<Config>(),
-            initialConfiguration = Config.NoteList, 
+            initialConfiguration = Config.NoteList,
             handleBackButton = true,
             childFactory = ::createChild
         )
+
+    private val _activeDetail = MutableValue(
+        RootComponent.ActiveDetail(null)
+    )
+    override val activeDetail: Value<RootComponent.ActiveDetail> = _activeDetail
+
+    init {
+
+        stack.subscribe { childStack ->
+            val activeChild = childStack.active.instance
+            if (activeChild is RootComponent.Child.Detail) {
+                _activeDetail.value = RootComponent.ActiveDetail(activeChild.component)
+            } else {
+                _activeDetail.value = RootComponent.ActiveDetail(null)
+            }
+        }
+    }
+
 
     @OptIn(DelicateDecomposeApi::class)
     private fun createChild(config: Config, context: ComponentContext): RootComponent.Child {
@@ -59,11 +77,16 @@ class DefaultRootComponent(
                     deleteNoteUseCase = deleteNoteUseCase,
                     noteExporter = noteExporter,
                     onNoteSelected = { noteId ->
-                        navigation.push(Config.NoteDetail(noteId))
+                        if (stack.value.active.configuration is Config.NoteDetail) {
+                            navigation.replaceCurrent(Config.NoteDetail(noteId))
+                        } else {
+                            navigation.push(Config.NoteDetail(noteId))
+                        }
                     },
 
-                )
+                    )
             )
+
             is Config.NoteDetail -> RootComponent.Child.Detail(
                 DefaultNoteDetailComponent(
                     componentContext = context,

@@ -19,7 +19,10 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NoteDetailScreen(component: NoteDetailComponent) {
+fun NoteDetailScreen(
+    component: NoteDetailComponent,
+    modifier: Modifier = Modifier
+) {
     val state by component.state.subscribeAsState()
 
     Scaffold(

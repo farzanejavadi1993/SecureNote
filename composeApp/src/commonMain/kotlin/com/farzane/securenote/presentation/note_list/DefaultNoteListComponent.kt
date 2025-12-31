@@ -65,16 +65,27 @@ class DefaultNoteListComponent(
         when (intent) {
             is NoteListIntent.AddNote -> {
                 scope.launch {
-                    addNoteUseCase(null, intent.title, intent.content)
+                    val result = addNoteUseCase(
+                        id = null,
+                        title = intent.title,
+                        content = intent.content
+                    )
+
+                    if (result is Resource.Error) {
+                        println("Error adding note: ${result.message}")
+                    }
                 }
             }
 
             is NoteListIntent.DeleteNote -> {
                 scope.launch {
-                    deleteNoteUseCase(intent.id)
+                    val result = deleteNoteUseCase(intent.id)
+
+                    if (result is Resource.Error) {
+                        println("Error deleting note: ${result.message}")
+                    }
                 }
             }
-
             is NoteListIntent.SelectNote -> {
                 onNoteSelected(intent.id)
             }

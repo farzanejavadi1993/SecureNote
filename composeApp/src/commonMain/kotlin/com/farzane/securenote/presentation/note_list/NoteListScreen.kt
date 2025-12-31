@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.farzane.securenote.domain.model.Note
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,13 +59,13 @@ fun NoteListScreen(
     val state by component.state.subscribeAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     var isDialogOpen by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state.exportMessage){
         state.exportMessage?.let { message ->
             snackBarHostState.showSnackbar(message = message)
         }
     }
-
 
     Scaffold(
         modifier= modifier,
@@ -72,7 +74,6 @@ fun NoteListScreen(
             TopAppBar(
                 title = { Text("Secure Notes") },
                 actions = {
-                    // EXPORT BUTTON
                     IconButton(onClick = { component.onEvent(NoteListIntent.ExportNotes) }) {
                         Icon(Icons.Default.ImportExport, contentDescription = "Export")
                     }
@@ -121,6 +122,11 @@ fun NoteListScreen(
                 onConfirm = { title, content ->
                     component.onEvent(NoteListIntent.AddNote(title, content))
                     isDialogOpen = false
+                },
+                onError = { errorMessage ->
+                    scope.launch {
+                        snackBarHostState.showSnackbar(errorMessage)
+                    }
                 }
             )
         }
@@ -170,7 +176,8 @@ fun NoteItemRow(
 @Composable
 fun AddNoteDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
+    onConfirm: (String, String) -> Unit,
+    onError: (String) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -199,9 +206,11 @@ fun AddNoteDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank() && content.isNotBlank()) {
+                   if (title.isNotBlank() && content.isNotBlank()) {
                         onConfirm(title, content)
-                    }
+                   } else {
+                       onError("Title and Content cannot be empty")
+                   }
                 }
             ) {
                 Text("Save")
@@ -211,7 +220,8 @@ fun AddNoteDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+
+
     )
 }
-

@@ -16,7 +16,7 @@ class DefaultNoteDetailComponent(
     private val noteId: Long?, // Null for new note, ID for edit
     private val getNoteByIdUseCase: GetNoteByIdUseCase,
     private val addNoteUseCase: AddNoteUseCase,
-    private val onFinished: () -> Unit
+    private val onFinished: () -> Unit,
 ) : NoteDetailComponent, ComponentContext by componentContext {
 
     private val _state = MutableValue(NoteDetailState(id = noteId))
@@ -58,7 +58,7 @@ class DefaultNoteDetailComponent(
 
     private fun saveNote() {
         val currentState = _state.value
-        if (currentState.title.isBlank())
+        if (currentState.title.isBlank() || currentState.content.isBlank())
             return
 
         scope.launch {

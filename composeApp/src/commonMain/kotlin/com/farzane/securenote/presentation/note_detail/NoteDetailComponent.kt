@@ -5,4 +5,5 @@ import com.arkivanov.decompose.value.Value
 interface NoteDetailComponent {
     val state: Value<NoteDetailState>
     fun onEvent(intent: NoteDetailIntent)
+
 }

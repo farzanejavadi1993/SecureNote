@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlin.collections.map
+
 class NoteRepositoryImpl(
     private val dao: NoteDao
 ) : NoteRepository {
@@ -25,26 +26,29 @@ class NoteRepositoryImpl(
             }
     }
 
-    override suspend fun insertNote(note: Note) {
-        try {
+    override suspend fun insertNote(note: Note): Resource<Unit> {
+        return try {
             dao.insertNote(note.toEntity())
+            Resource.Success(Unit)
         } catch (e: Exception) {
-            println("Error inserting note: ${e.message}")
-            throw e
+            Resource.Error("Could not insert note: ${e.message}", e)
         }
     }
 
-    override suspend fun deleteNote(id: Long) {
-        try {
+    override suspend fun deleteNote(id: Long): Resource<Unit> {
+        return try {
             dao.deleteNoteById(id)
+            Resource.Success(Unit)
         } catch (e: Exception) {
-            println("Error deleting note: ${e.message}")
-            throw e
+            Resource.Error("Could not delete note: ${e.message}", e)
         }
     }
 
     override suspend fun getNoteById(id: Long): Note? {
-        return dao.getNoteById(id)?.toDomain()
+        return try {
+            dao.getNoteById(id)?.toDomain()
+        } catch (e: Exception) {
+            null
+        }
     }
-
 }

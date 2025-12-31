@@ -1,11 +1,20 @@
 package com.farzane.securenote.domain.usecase
 
+import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.repository.NoteRepository
+
 class AddNoteUseCase(private val repository: NoteRepository) {
-    suspend operator fun invoke( id: Long? = null,title: String, content: String) {
+
+    suspend operator fun invoke(
+        id: Long? = null,
+        title: String,
+        content: String,
+
+    ): Resource<Unit> {
+
         if (title.isBlank() && content.isBlank()) {
-            return // Don't save empty notes
+            return Resource.Error("Title and content cannot be empty")
         }
         val note = Note(
             id = id,
@@ -13,6 +22,6 @@ class AddNoteUseCase(private val repository: NoteRepository) {
             content = content,
             timestamp = System.currentTimeMillis()
         )
-        repository.insertNote(note)
+        return repository.insertNote(note)
     }
 }

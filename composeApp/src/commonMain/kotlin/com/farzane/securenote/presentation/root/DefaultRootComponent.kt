@@ -93,7 +93,7 @@ class DefaultRootComponent(
                     noteId = config.noteId,
                     getNoteByIdUseCase = getNoteByIdUseCase,
                     addNoteUseCase = addNoteUseCase,
-                    onFinished = { navigation.pop() }
+                    onFinished = { navigation.pop() },
                 )
             )
         }

@@ -14,6 +14,7 @@ junit = "4.13.2"
 kotlinx-coroutines = "1.10.2"
 essenty = "2.2.1"
 kotlin = "2.0.21"
+kotlinx-serialization = "1.6.3"
 
 #Room
 room = "2.7.0-alpha01"
@@ -70,6 +71,7 @@ androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", vers
 androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "compose-ui-test" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "compose-ui-test" }
 
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 essenty-lifecycle-coroutines = { module = "com.arkivanov.essenty:lifecycle-coroutines", version.ref = "essenty" }
 
 [plugins]

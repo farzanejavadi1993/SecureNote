@@ -3,7 +3,7 @@ package com.farzane.securenote.presentation.root
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNotesUseCase
-import com.farzane.securenote.presentation.note_list.DefaultNoteListComponent
+import com.farzane.securenote.presentation.list.DefaultNoteListComponent
 import org.koin.core.component.inject
 import kotlin.getValue
 import com.arkivanov.decompose.ComponentContext
@@ -11,9 +11,12 @@ import com.arkivanov.decompose.DelicateDecomposeApi
 import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.lifecycle.Lifecycle
+import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
-import com.farzane.securenote.presentation.note_detail.DefaultNoteDetailComponent
+import com.farzane.securenote.presentation.lock.DefaultAuthComponent
+import com.farzane.securenote.presentation.detail.DefaultNoteDetailComponent
 import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
 
@@ -21,6 +24,7 @@ class DefaultRootComponent(
     componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext, KoinComponent {
 
+    private val authManager by inject<AuthManager>()
     private val getNotesUseCase by inject<GetNotesUseCase>()
     private val addNoteUseCase by inject<AddNoteUseCase>()
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
@@ -29,6 +33,9 @@ class DefaultRootComponent(
 
     @Serializable
     sealed interface Config {
+        @Serializable
+        data object Lock : Config
+
         @Serializable
         data object NoteList : Config
 
@@ -41,8 +48,8 @@ class DefaultRootComponent(
     override val stack: Value<ChildStack<*, RootComponent.Child>> =
         childStack(
             source = navigation,
-            serializer = kotlinx.serialization.serializer<Config>(),
-            initialConfiguration = Config.NoteList,
+            serializer = Config.serializer(),
+            initialConfiguration = if (authManager.hasPin()) Config.Lock else Config.NoteList ,
             handleBackButton = true,
             childFactory = ::createChild
         )
@@ -62,12 +69,38 @@ class DefaultRootComponent(
                 _activeDetail.value = RootComponent.ActiveDetail(null)
             }
         }
+        lifecycle.subscribe(object : Lifecycle.Callbacks {
+            override fun onResume() {
+
+                authManager.checkShouldLock()
+
+
+                if (authManager.isAppLocked && stack.value.active.configuration !is Config.Lock) {
+                    navigation.bringToFront(Config.Lock)
+
+                }
+            }
+
+            override fun onPause() {
+                // App went to background
+            }
+        })
     }
 
 
     @OptIn(DelicateDecomposeApi::class)
     private fun createChild(config: Config, context: ComponentContext): RootComponent.Child {
         return when (config) {
+
+            Config.Lock -> RootComponent.Child.Lock(
+                DefaultAuthComponent(
+                    componentContext = context,
+                    authManager = authManager,
+                    onAuthenticated = {
+                        navigation.replaceAll(Config.NoteList)
+                    }
+                )
+            )
             Config.NoteList -> RootComponent.Child.List(
 
                 DefaultNoteListComponent(
@@ -83,8 +116,24 @@ class DefaultRootComponent(
                             navigation.push(Config.NoteDetail(noteId))
                         }
                     },
+                    onNoteDeleted = { deletedId ->
+                        val isDeletingActiveDetail = (_activeDetail.value.component?.state?.value?.id == deletedId)
 
-                    )
+                        navigation.navigate { oldStack ->
+                            oldStack.filterNot { config ->
+                                config is Config.NoteDetail && config.noteId == deletedId
+                            }
+                        }
+                        if (isDeletingActiveDetail) {
+                            _activeDetail.value = RootComponent.ActiveDetail(null)
+                        }
+                    },
+                    onLock = {
+                        authManager.lockApp() // Tell the manager to lock the state
+                        navigation.bringToFront(Config.Lock) // Navigate to the Lock screen
+                    }
+
+            )
             )
 
             is Config.NoteDetail -> RootComponent.Child.Detail(

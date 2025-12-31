@@ -1,4 +1,4 @@
-package com.farzane.securenote.presentation.note_detail
+package com.farzane.securenote.presentation.detail
 
 data class NoteDetailState(
     val id: Long? = null, // null = new note, value = editing existing

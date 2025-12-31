@@ -1,5 +1,6 @@
 package com.farzane.securenote.data.repository
 
+import com.farzane.securenote.core.util.EncryptionHelper
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.data.local.dao.NoteDao
 import com.farzane.securenote.data.mapper.toDomain
@@ -18,7 +19,14 @@ class NoteRepositoryImpl(
     override fun getAllNotes(): Flow<Resource<List<Note>>> {
         return dao.getAllNotes()
             .map { entities ->
-                val notes = entities.map { it.toDomain() }
+                val notes = entities.map { entity ->
+                    val domainNote = entity.toDomain()
+                    // 1. DECRYPT: Database -> Domain
+                    domainNote.copy(
+                        title = EncryptionHelper.encryptDecrypt(domainNote.title),
+                        content = EncryptionHelper.encryptDecrypt(domainNote.content)
+                    )
+                }
                 Resource.Success(notes) as Resource<List<Note>>
             }
             .catch { e ->
@@ -28,7 +36,13 @@ class NoteRepositoryImpl(
 
     override suspend fun insertNote(note: Note): Resource<Unit> {
         return try {
-            dao.insertNote(note.toEntity())
+            // 2. ENCRYPT: Domain -> Database
+            val encryptedNote = note.copy(
+                title = EncryptionHelper.encryptDecrypt(note.title),
+                content = EncryptionHelper.encryptDecrypt(note.content)
+            )
+
+            dao.insertNote(encryptedNote.toEntity())
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Could not insert note: ${e.message}", e)
@@ -46,7 +60,15 @@ class NoteRepositoryImpl(
 
     override suspend fun getNoteById(id: Long): Note? {
         return try {
-            dao.getNoteById(id)?.toDomain()
+            val entity = dao.getNoteById(id)
+            entity?.let {
+                val domainNote = it.toDomain()
+                // 3. DECRYPT Single Note
+                domainNote.copy(
+                    title = EncryptionHelper.encryptDecrypt(domainNote.title),
+                    content = EncryptionHelper.encryptDecrypt(domainNote.content)
+                )
+            }
         } catch (e: Exception) {
             null
         }

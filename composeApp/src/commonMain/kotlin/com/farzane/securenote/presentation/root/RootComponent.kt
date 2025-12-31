@@ -1,9 +1,10 @@
 package com.farzane.securenote.presentation.root
 
-import com.farzane.securenote.presentation.note_list.NoteListComponent
+import com.farzane.securenote.presentation.list.NoteListComponent
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
-import com.farzane.securenote.presentation.note_detail.NoteDetailComponent
+import com.farzane.securenote.presentation.lock.AuthComponent
+import com.farzane.securenote.presentation.detail.NoteDetailComponent
 
 interface RootComponent {
 
@@ -13,5 +14,7 @@ interface RootComponent {
     sealed class Child {
         data class List(val component: NoteListComponent) : Child()
         data class Detail(val component: NoteDetailComponent) : Child()
+        data class Lock(val component: AuthComponent) : Child()
+
     }
 }

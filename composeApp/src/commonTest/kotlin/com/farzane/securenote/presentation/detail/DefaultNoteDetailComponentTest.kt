@@ -1,4 +1,4 @@
-package com.farzane.securenote.presentation.note_detail
+package com.farzane.securenote.presentation.detail
 
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry

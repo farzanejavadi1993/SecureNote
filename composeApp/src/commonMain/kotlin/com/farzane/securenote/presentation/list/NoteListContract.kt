@@ -1,4 +1,4 @@
-package com.farzane.securenote.presentation.note_list
+package com.farzane.securenote.presentation.list
 
 import com.farzane.securenote.domain.model.Note
 
@@ -18,5 +18,7 @@ sealed interface NoteListIntent {
     data class ToggleSelectionMode(val noteId: Long) : NoteListIntent
     data class ToggleNoteSelection(val noteId: Long) : NoteListIntent
     data object ClearSelectionMode : NoteListIntent
+
+    data object LockApp : NoteListIntent
 
 }

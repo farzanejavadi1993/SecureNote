@@ -1,4 +1,4 @@
-package com.farzane.securenote.presentation.note_list
+package com.farzane.securenote.presentation.list
 
 import com.arkivanov.decompose.value.Value
 

@@ -1,4 +1,4 @@
-package com.farzane.securenote.presentation.note_list
+package com.farzane.securenote.presentation.list
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.farzane.securenote.core.util.Resource
@@ -27,7 +27,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultNoteListComponentTest {
@@ -38,6 +37,7 @@ class DefaultNoteListComponentTest {
     private val addNoteUseCase: AddNoteUseCase = mockk()
     private val deleteNoteUseCase: DeleteNoteUseCase = mockk()
     private val noteExporter: NoteExporter = mockk()
+
 
     // A simple mock for the navigation callback
     private val onNoteSelectedCallback: (Long) -> Unit = mockk(relaxed = true)
@@ -192,7 +192,8 @@ class DefaultNoteListComponentTest {
             addNoteUseCase = addNoteUseCase,
             deleteNoteUseCase = deleteNoteUseCase,
             onNoteSelected = onNoteSelectedCallback,
-            noteExporter = noteExporter
+            noteExporter = noteExporter,
+            onNoteDeleted = { },
         )
     }
 }

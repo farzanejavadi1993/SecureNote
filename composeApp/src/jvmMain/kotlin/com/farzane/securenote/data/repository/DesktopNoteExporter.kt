@@ -12,7 +12,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 class DesktopNoteExporter : NoteExporter {
     override suspend fun exportNotes(notes: List<Note>):
             Resource<String> = withContext(Dispatchers.IO) {
-
+        val fileName = "notes_backup_${System.currentTimeMillis()}.txt"
         val content = buildString {
             append("--- My Secure Notes ---\n\n")
             notes.forEach { note ->
@@ -25,7 +25,7 @@ class DesktopNoteExporter : NoteExporter {
 
         val fileChooser = JFileChooser()
         fileChooser.dialogTitle = "Export Notes"
-        fileChooser.selectedFile = File("notes_backup.txt")
+        fileChooser.selectedFile = File(fileName)
         fileChooser.fileFilter = FileNameExtensionFilter("Text Files", "txt")
 
         val userSelection = fileChooser.showSaveDialog(null)

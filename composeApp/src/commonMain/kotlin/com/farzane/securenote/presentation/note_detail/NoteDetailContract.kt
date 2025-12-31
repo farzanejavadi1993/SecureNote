@@ -11,4 +11,5 @@ sealed interface NoteDetailIntent {
     data class UpdateContent(val content: String) : NoteDetailIntent
     data object SaveNote : NoteDetailIntent
     data object Close : NoteDetailIntent
+    data object DeleteNote : NoteDetailIntent
 }

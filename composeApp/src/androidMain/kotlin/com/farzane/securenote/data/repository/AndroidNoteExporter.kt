@@ -51,7 +51,8 @@ class AndroidNoteExporter(private val context: Context) : NoteExporter {
                     }
                     return@withContext Resource.Success("Saved to Downloads folder")
 
-                } else {
+                }
+                else {
                     val downloadsDir =
                         Environment.getExternalStoragePublicDirectory(
                             Environment.DIRECTORY_DOWNLOADS

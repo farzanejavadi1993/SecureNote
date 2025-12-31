@@ -5,6 +5,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
+import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,6 +17,7 @@ class DefaultNoteDetailComponent(
     private val noteId: Long?, // Null for new note, ID for edit
     private val getNoteByIdUseCase: GetNoteByIdUseCase,
     private val addNoteUseCase: AddNoteUseCase,
+    private val deleteNoteUseCase: DeleteNoteUseCase,
     private val onFinished: () -> Unit,
 ) : NoteDetailComponent, ComponentContext by componentContext {
 
@@ -48,11 +50,26 @@ class DefaultNoteDetailComponent(
             is NoteDetailIntent.UpdateTitle -> {
                 _state.value = _state.value.copy(title = intent.title)
             }
+
             is NoteDetailIntent.UpdateContent -> {
                 _state.value = _state.value.copy(content = intent.content)
             }
+
             is NoteDetailIntent.SaveNote -> saveNote()
             is NoteDetailIntent.Close -> onFinished()
+            is NoteDetailIntent.DeleteNote -> {
+                if (noteId != null) {
+                    scope.launch {
+
+                        deleteNoteUseCase(noteId)
+                        withContext(Dispatchers.Main) {
+                            onFinished()
+                        }
+                    }
+                } else {
+                    onFinished()
+                }
+            }
         }
     }
 
@@ -67,7 +84,8 @@ class DefaultNoteDetailComponent(
             addNoteUseCase(
                 currentState.id,
                 currentState.title,
-                currentState.content)
+                currentState.content
+            )
 
             withContext(Dispatchers.Main) {
                 onFinished()

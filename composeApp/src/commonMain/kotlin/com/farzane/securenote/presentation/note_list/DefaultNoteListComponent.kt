@@ -76,7 +76,6 @@ class DefaultNoteListComponent(
                     }
                 }
             }
-
             is NoteListIntent.DeleteNote -> {
                 scope.launch {
                     val result = deleteNoteUseCase(intent.id)
@@ -89,17 +88,47 @@ class DefaultNoteListComponent(
             is NoteListIntent.SelectNote -> {
                 onNoteSelected(intent.id)
             }
+            /* is NoteListIntent.ExportNotes -> {
+                 scope.launch {
+                     when (val result = noteExporter.exportNotes(_state.value.notes)) {
+                         is Resource.Success -> {
+                             _state.value = _state.value.copy(exportMessage = result.data)
+                         }
 
+                         is Resource.Error -> {
+                             _state.value = _state.value.copy(
+                                 exportMessage = "Error: ${result.message}"
+                             )
+                         }
+
+                         else -> {}
+                     }
+                 }
+             }*/
             is NoteListIntent.ExportNotes -> {
                 scope.launch {
-                    when (val result = noteExporter.exportNotes(_state.value.notes)) {
+                    val notesToExport = if (_state.value.isMultiSelectionMode) {
+                        _state.value.notes.filter { it.id in _state.value.selectedNoteIds }
+                    } else {
+                        _state.value.notes
+                    }
+
+                    if (notesToExport.isEmpty()) {
+                        _state.value = _state.value.copy(exportMessage = "No notes to export.")
+                        return@launch
+                    }
+                    when (val result = noteExporter.exportNotes(notesToExport)) {
                         is Resource.Success -> {
-                            _state.value = _state.value.copy(exportMessage = result.data)
+                            _state.value = _state.value.copy(
+                                exportMessage = result.data,
+                                isMultiSelectionMode = false,
+                                selectedNoteIds = emptySet()
+                            )
                         }
 
                         is Resource.Error -> {
                             _state.value = _state.value.copy(
-                                exportMessage = "Error: ${result.message}"
+                                exportMessage = "Export failed: ${result.message}"
                             )
                         }
 
@@ -107,6 +136,43 @@ class DefaultNoteListComponent(
                     }
                 }
             }
+
+
+            is NoteListIntent.ClearSelectionMode -> {
+                _state.value = _state.value.copy(
+                    isMultiSelectionMode = false,
+                    selectedNoteIds = emptySet()
+                )
+            }
+            is NoteListIntent.ToggleNoteSelection -> {
+                val currentIds = _state.value.selectedNoteIds.toMutableSet()
+                if (currentIds.contains(intent.noteId)) {
+                    currentIds.remove(intent.noteId)
+                } else {
+                    currentIds.add(intent.noteId)
+                }
+                val isModeActive = currentIds.isNotEmpty()
+
+                _state.value = _state.value.copy(
+                    selectedNoteIds = currentIds,
+                    isMultiSelectionMode = isModeActive
+                )
+            }
+            is NoteListIntent.ToggleSelectionMode -> {
+                val currentIds = _state.value.selectedNoteIds.toMutableSet()
+                if (currentIds.contains(intent.noteId)) {
+                    currentIds.remove(intent.noteId) // Uncheck
+                } else {
+                    currentIds.add(intent.noteId)    // Check
+                }
+                val isModeActive = currentIds.isNotEmpty()
+
+                _state.value = _state.value.copy(
+                    selectedNoteIds = currentIds,
+                    isMultiSelectionMode = isModeActive
+                )
+            }
+
         }
     }
 

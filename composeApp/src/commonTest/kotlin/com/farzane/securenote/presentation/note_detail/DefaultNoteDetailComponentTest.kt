@@ -5,6 +5,7 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
+import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,6 +31,7 @@ class DefaultNoteDetailComponentTest {
     // --- Mocks ---
     private val getNoteByIdUseCase: GetNoteByIdUseCase = mockk()
     private val addNoteUseCase: AddNoteUseCase = mockk()
+    private val deleteNoteUseCase: DeleteNoteUseCase = mockk()
     private val onFinishedCallback: () -> Unit = mockk(relaxed = true)
 
     // --- Test Control ---
@@ -176,6 +178,7 @@ class DefaultNoteDetailComponentTest {
             noteId = noteId,
             getNoteByIdUseCase = getNoteByIdUseCase,
             addNoteUseCase = addNoteUseCase,
+            deleteNoteUseCase = deleteNoteUseCase,
             onFinished = onFinishedCallback,
             )
     }

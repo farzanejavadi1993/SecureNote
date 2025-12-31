@@ -62,3 +62,5 @@ This project is built with a modern, scalable, and testable technology stack, fo
 
 The project is organized into distinct layers, ensuring a clean separation of concerns.
 
+## Demo Video
+![Demo](Demo.MP4)

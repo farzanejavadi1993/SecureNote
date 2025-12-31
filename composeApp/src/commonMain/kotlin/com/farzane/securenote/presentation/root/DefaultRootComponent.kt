@@ -142,6 +142,7 @@ class DefaultRootComponent(
                         navigation.pop()
                         listComponent?.onEvent(NoteListIntent.RefreshState)
 
+
                     },
                     // NEW: Add a callback for when the user cancels.
                     onCancelled = { navigation.pop() }

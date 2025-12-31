@@ -22,7 +22,7 @@ sealed interface NoteListIntent {
     data object LockApp : NoteListIntent
     data object RemovePin : NoteListIntent
     data object NavigateToLock : NoteListIntent
-
     data object RefreshState : NoteListIntent
 
+    data object OnSnackBarShown : NoteListIntent
 }

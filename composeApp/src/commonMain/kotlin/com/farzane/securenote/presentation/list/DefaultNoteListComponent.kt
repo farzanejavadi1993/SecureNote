@@ -75,6 +75,10 @@ class DefaultNoteListComponent(
                 // Re-check the PIN status and update the UI.
                 _state.value = _state.value.copy(hasPin = authManager.hasPin())
             }
+            is NoteListIntent.OnSnackBarShown -> {
+                // Clear the message from the state so it doesn't show again.
+                _state.value = _state.value.copy(exportMessage = null)
+            }
         }
     }
 

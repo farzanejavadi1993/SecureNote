@@ -83,6 +83,7 @@ fun NoteListScreen(
     LaunchedEffect(state.exportMessage) {
         state.exportMessage?.let { message ->
             snackBarHostState.showSnackbar(message = message)
+            component.onEvent(NoteListIntent.OnSnackBarShown)
         }
     }
 

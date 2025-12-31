@@ -21,12 +21,17 @@ A comprehensive list of features demonstrating a robust and user-friendly applic
 - **🗑️ Delete Multiple Notes:** Quickly delete several notes at once.
 - **✅ Confirmation Dialogs:** Safe and user-friendly dialogs confirm critical actions like deleting or exporting notes.
 
-#### Security
-- **🔐 App PIN Lock:**  The application is protected by a 4-digit PIN. 
-- **🔒 Manual Lock:**  Users can also manually lock the app at any time via a dedicated lock icon in the app bar.
-- **🛡️ Data-at-Rest Encryption:**  All note content is encrypted using a cipher before being saved to the database. This ensures that data is unreadable even if the device's storage is compromised by an attacker.
-- **📲 Screenshot Protection:**  On Android, the system is prevented from taking screenshots or showing app content in the "Recent Apps" switcher, protecting on-screen data from being captured.
-  Note on PIN Implementation: The PIN lock will enable by user to showcase the security architecture. In a production-grade application, this would be a user-configurable feature managed via a dedicated Settings screen, allowing users to enable or disable the passcode based on their preference. The PIN's storage mechanism would also be enhanced for production use.
+### 🛡️ Security Architecture
+- **🔐 App PIN Lock:** Integrated authentication system requiring a 4-digit PIN. 
+- **🔒 Manual Lock:** dedicated lock trigger allowing users to secure the session instantly.
+- **🛡️ Data-at-Rest Encryption:** All note content is **encrypted** using a custom cipher before being written to the database. Even if the physical database file is compromised, the content remains unreadable.
+- **📲 Privacy Screen:** (Android) Prevents the operating system from taking screenshots or displaying app content in the "Recent Apps" switcher.
+
+> **A Note on the PIN Feature Implementation:**
+>
+> For the purpose of this showcase, the PIN lock is managed directly via the lock icon in the app bar. This allows for quick demonstration of the app's core security features (setting a PIN, locking, and removing it).
+>
+> In a full production application, this functionality would be moved to a dedicated **Settings screen**. This would provide a clearer and more intuitive user experience, allowing users to explicitly enable or disable the passcode and manage other security preferences, rather than toggling it from the main screen's app bar.
 
 #### Platform-Specific Features
 - **Android:**

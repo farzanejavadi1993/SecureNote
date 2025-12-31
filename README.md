@@ -63,4 +63,4 @@ This project is built with a modern, scalable, and testable technology stack, fo
 The project is organized into distinct layers, ensuring a clean separation of concerns.
 
 ## Demo Video
-![Demo](Demo.MP4)
+https://github.com/farzanejavadi1993/SecureNote/blob/main/Demo.MP4

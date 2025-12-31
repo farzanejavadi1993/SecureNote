@@ -18,4 +18,8 @@ class AndroidKeyValueStorage(context: Context) : KeyValueStorage {
     override fun getPin(): String? {
         return prefs.getString("user_pin", null)
     }
+
+    override fun clearPin() {
+        prefs.edit().remove("user_pin").apply()
+    }
 }

@@ -5,6 +5,7 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import com.farzane.securenote.core.util.Resource
+import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
@@ -22,14 +23,18 @@ import kotlinx.coroutines.launch
  */
 class DefaultNoteListComponent(
     componentContext: ComponentContext,
+    private val authManager: AuthManager,
     private val getNotesUseCase: GetNotesUseCase,
     private val addNoteUseCase: AddNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val onNoteSelected: (Long) -> Unit,
     private val onNoteDeleted: (Long) -> Unit,
     private val onLock: () -> Unit,
+    private val onNavigateToLock: () -> Unit,
     private val noteExporter: NoteExporter
 ) : NoteListComponent, ComponentContext by componentContext {
+
+
     private val _state = MutableValue(NoteListState(isLoading = true))
     override val state: Value<NoteListState> = _state
 
@@ -40,6 +45,7 @@ class DefaultNoteListComponent(
         )
 
     init {
+        _state.value = _state.value.copy(hasPin = authManager.hasPin())
         // Automatically load notes as soon as the component is created.
         loadNotes()
     }
@@ -60,6 +66,15 @@ class DefaultNoteListComponent(
             is NoteListIntent.ToggleNoteSelection -> onToggleNoteSelection(intent.noteId)
             is NoteListIntent.ToggleSelectionMode -> onToggleSelectionMode(intent.noteId)
             is NoteListIntent.LockApp -> onLock() // Direct pass-through for navigation
+            is NoteListIntent.NavigateToLock -> onNavigateToLock()
+            is NoteListIntent.RemovePin -> {
+                authManager.removePin()
+                _state.value = _state.value.copy(hasPin = false)
+            }
+            is NoteListIntent.RefreshState -> {
+                // Re-check the PIN status and update the UI.
+                _state.value = _state.value.copy(hasPin = authManager.hasPin())
+            }
         }
     }
 

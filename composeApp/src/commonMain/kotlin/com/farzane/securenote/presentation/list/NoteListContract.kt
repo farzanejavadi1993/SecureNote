@@ -8,7 +8,8 @@ data class NoteListState(
     val error: String? = null,
     val exportMessage: String? = null,
     val isMultiSelectionMode: Boolean = false,
-    val selectedNoteIds: Set<Long> = emptySet()
+    val selectedNoteIds: Set<Long> = emptySet(),
+    val hasPin: Boolean = false
 )
 sealed interface NoteListIntent {
     data class AddNote(val title: String, val content: String) : NoteListIntent
@@ -18,7 +19,10 @@ sealed interface NoteListIntent {
     data class ToggleSelectionMode(val noteId: Long) : NoteListIntent
     data class ToggleNoteSelection(val noteId: Long) : NoteListIntent
     data object ClearSelectionMode : NoteListIntent
-
     data object LockApp : NoteListIntent
+    data object RemovePin : NoteListIntent
+    data object NavigateToLock : NoteListIntent
+
+    data object RefreshState : NoteListIntent
 
 }

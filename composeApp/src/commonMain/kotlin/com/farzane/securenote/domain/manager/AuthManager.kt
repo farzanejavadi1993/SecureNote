@@ -41,7 +41,6 @@ class AuthManager(private val storage: KeyValueStorage) {
     fun savePin(pin: String) {
         storage.savePin(pin)
         isAppLocked = false // Unlock immediately after setting
-        updateActivity() // Reset the timer right after setup.
     }
 
     /**
@@ -52,19 +51,11 @@ class AuthManager(private val storage: KeyValueStorage) {
         val storedPin = storage.getPin()
         if (inputPin == storedPin) {
             isAppLocked = false
-            updateActivity() // Reset the timer after a successful login.
             return true
         }
         return false
     }
 
-    /**
-     * Resets the inactivity timer.
-     * This should be called on any user interaction to keep the app unlocked.
-     */
-    fun updateActivity() {
-        lastActiveTime = currentTimeMillis()
-    }
 
     /**
      * This is typically called when the app resumes from the background.
@@ -84,4 +75,13 @@ class AuthManager(private val storage: KeyValueStorage) {
     }
 
     private fun currentTimeMillis(): Long = System.currentTimeMillis()
+
+    /**
+     * Removes the user's PIN from storage, effectively disabling the lock.
+     */
+    fun removePin() {
+        storage.clearPin() // We'll create this function in the interface next.
+        isAppLocked = false // The app is now fully unlocked.
+
+    }
 }

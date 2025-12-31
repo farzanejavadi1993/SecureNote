@@ -74,7 +74,7 @@ fun App(rootComponent: RootComponent) {
                     awaitPointerEventScope {
                         while (true) {
                             awaitPointerEvent()
-                            authManager.updateActivity() // Reset 2-min timer
+
                         }
                     }
                 }

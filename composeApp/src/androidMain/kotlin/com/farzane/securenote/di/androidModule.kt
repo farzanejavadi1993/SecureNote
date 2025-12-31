@@ -1,5 +1,6 @@
 package com.farzane.securenote.di
 
+/*
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.farzane.securenote.data.local.database.AppDatabase
@@ -16,4 +17,4 @@ val androidModule = module {
             name = dbFile.absolutePath
         )
     }
-}
+}*/

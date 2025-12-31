@@ -29,4 +29,9 @@ class DesktopKeyValueStorage : KeyValueStorage {
     override fun getPin(): String? {
         return props.getProperty("user_pin")
     }
+
+    override fun clearPin() {
+        props.remove("user_pin")
+        file.outputStream().use { props.store(it, null) }
+    }
 }

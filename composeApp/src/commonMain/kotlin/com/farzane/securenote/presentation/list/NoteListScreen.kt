@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -85,6 +86,8 @@ fun NoteListScreen(
         }
     }
 
+    var showRemovePinDialog by remember { mutableStateOf(false) }
+
     // Prepares the permission request for saving files.
     // This will ask for permission on older Android versions or grant it automatically on newer ones.
     val launchExport = rememberPermissionLauncher { isGranted ->
@@ -112,7 +115,18 @@ fun NoteListScreen(
             } else {
                 NormalAppBar(
                     onExport = { showExportDialog = true },
-                    onLock = { component.onEvent(NoteListIntent.LockApp) }
+                    hasPin = state.hasPin,
+                    onLock = {
+
+                       // component.onEvent(NoteListIntent.LockApp)
+                        if (state.hasPin) {
+                            // If PIN exists, show a dialog to confirm removal.
+                            showRemovePinDialog = true
+                        } else {
+                            // If no PIN exists, send intent to navigate to Lock screen setup.
+                            component.onEvent(NoteListIntent.NavigateToLock)
+                        }
+                    }
                 )
             }
 
@@ -233,6 +247,21 @@ fun NoteListScreen(
         )
 
     }
+
+    if (showRemovePinDialog) {
+        ConfirmationDialog(
+            title = "Remove PIN",
+            text = "Are you sure you want to remove the PIN lock? The app will no longer be secure.",
+            confirmButtonText = "Remove",
+            confirmButtonColor = MaterialTheme.colorScheme.error,
+            onConfirm = {
+                component.onEvent(NoteListIntent.RemovePin)
+                showRemovePinDialog = false
+            },
+            onDismiss = { showRemovePinDialog = false }
+        )
+    }
+
 }
 
 
@@ -301,7 +330,10 @@ private fun SelectionAppBar(selectedCount: Int, onClose: () -> Unit, onExport: (
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun NormalAppBar(onExport: () -> Unit, onLock: () -> Unit) {
+private fun NormalAppBar(
+    onExport: () -> Unit,
+    hasPin: Boolean,
+    onLock: () -> Unit) {
     TopAppBar(
         title = { Text("Secure Notes") },
         modifier = Modifier.shadow(elevation = 4.dp),
@@ -310,7 +342,11 @@ private fun NormalAppBar(onExport: () -> Unit, onLock: () -> Unit) {
                 Icon(Icons.Default.Share, contentDescription = "Export")
             }
             IconButton(onClick = onLock) {
-                Icon(Icons.Default.Lock, contentDescription = "Lock App")
+                if (hasPin) {
+                    Icon(Icons.Default.Lock, contentDescription = "Manage PIN")
+                } else {
+                    Icon(Icons.Default.LockOpen, contentDescription = "Set PIN")
+                }
             }
         }
     )

@@ -13,7 +13,8 @@ import com.farzane.securenote.domain.manager.AuthManager
 class DefaultAuthComponent(
     componentContext: ComponentContext,
     private val authManager: AuthManager,
-    private val onAuthenticated: () -> Unit  // Callback to navigate away when unlocked.
+    private val onAuthenticated: () -> Unit , // Callback to navigate away when unlocked.
+    private val onCancelled: () -> Unit
 ) : AuthComponent, ComponentContext by componentContext {
 
     // Initialize the state based on whether a PIN already exists.
@@ -42,5 +43,9 @@ class DefaultAuthComponent(
                  _state.value = _state.value.copy(error = "Wrong PIN")
              }
         }
+    }
+
+    override fun onCancel() {
+        onCancelled() // Just call the callback to close the screen.
     }
 }

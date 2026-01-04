@@ -13,7 +13,7 @@ import javax.swing.SwingUtilities
 
 fun main() {
 
-    startKoin {
+   startKoin {
         modules(appModule, jvmModule)
     }
 

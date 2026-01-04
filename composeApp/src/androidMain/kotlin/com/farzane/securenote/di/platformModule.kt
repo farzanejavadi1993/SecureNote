@@ -23,6 +23,6 @@ actual val platformModule = module {
         ).build()
     }
     single<NoteExporter> { AndroidNoteExporter(androidContext()) }
-     single<KeyValueStorage> { AndroidKeyValueStorage(androidContext()) }
+    single<KeyValueStorage> { AndroidKeyValueStorage(androidContext()) }
 }
 

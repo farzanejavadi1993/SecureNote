@@ -31,7 +31,6 @@ decompose = "3.2.2"
 #Test
 androidx-testExt = "1.3.0"
 mockk = "1.13.10"
-kotlinx-coroutines-test = "1.8.0"
 turbine = "1.1.0"
 compose-ui-test = "1.7.6"
 

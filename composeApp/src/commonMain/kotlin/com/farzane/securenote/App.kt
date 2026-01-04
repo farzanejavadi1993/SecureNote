@@ -1,3 +1,5 @@
+@file:Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+
 package com.farzane.securenote
 
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -62,11 +64,18 @@ import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.presentation.lock.LockScreen
 import org.koin.compose.koinInject
 
+/**
+ * The root Composable of the entire application.
+ *
+ * It is responsible for:
+ * 1. Setting up the theme and global listeners (like the inactivity timer).
+ * 2. Deciding whether to show the Lock Screen or the main app content.
+ * 3. Switching between the phone layout (single pane) and the tablet/desktop layout (Master-Detail).
+ */
 @Composable
 fun App(rootComponent: RootComponent) {
-    val authManager = koinInject<AuthManager>()
-
     AppTheme {
+        // A global Box that listens for any touch to reset the auto-lock timer.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,54 +88,42 @@ fun App(rootComponent: RootComponent) {
                     }
                 }
         ) {
+            // Get the current navigation stack state from the RootComponent.
             val stack by rootComponent.stack.subscribeAsState()
-
-            // 3. CHECK FOR LOCK SCREEN FIRST
-            // If the active screen is the Lock Screen, show it immediately (blocking everything else)
             val activeInstance = stack.active.instance
-            if (activeInstance is RootComponent.Child.Lock) {
-                val state by activeInstance.component.state.subscribeAsState()
-                LockScreen(
-                    isSetupMode = state.isSetupMode,
-                    onPinSuccess = { pin -> activeInstance.component.onPinEnter(pin) }
-                )
-            } else {
 
+            // --- Security Check: Show Lock Screen if needed ---
+            // If the active screen is the Lock Screen, show it on top of everything else.
+            if (activeInstance is RootComponent.Child.Lock) {
+                val lockState by activeInstance.component.state.subscribeAsState()
+                LockScreen(
+                    isSetupMode = lockState.isSetupMode,
+                    onPinSuccess = { pin -> activeInstance.component.onPinEnter(pin) },
+                    )
+            } else {
+                // --- Main App Content (if unlocked) ---
+                // This checks the screen size to decide which layout to use.
                 BoxWithConstraints {
                     val isSplitView = maxWidth > 600.dp
 
                     if (isSplitView) {
-                        val stack by rootComponent.stack.subscribeAsState()
+                        // --- TABLET / DESKTOP LAYOUT (Master-Detail) ---
                         val activeDetailWrapper by rootComponent.activeDetail.subscribeAsState()
                         val activeDetail = activeDetailWrapper.component
+
+                        // Find the NoteList component from the stack.
                         val listChild = stack.items.find {
                             it.instance is RootComponent.Child.List
-                        }?.instance ?: stack.active.instance
-
+                        }?.instance
 
                         if (listChild is RootComponent.Child.List) {
                             MasterDetailLayout(
                                 listComponent = listChild.component,
                                 detailComponent = activeDetail
                             )
-                        } else {
-                            // Fallback: If for some reason we are deep in navigation without a list,
-                            // just render whatever is active (though unusual for this architecture)
-                            Children(
-                                stack = rootComponent.stack,
-                                animation = stackAnimation(slide())
-                            ) { child ->
-                                when (val instance = child.instance) {
-                                    is RootComponent.Child.List -> NoteListScreen(instance.component)
-                                    is RootComponent.Child.Detail -> NoteDetailScreen(instance.component)
-                                    is RootComponent.Child.Lock -> {
-
-                                    }
-                                }
-                            }
                         }
                     } else {
-
+                        // --- PHONE LAYOUT (Single Pane Navigation) ---
                         Children(
                             stack = rootComponent.stack,
                             animation = stackAnimation(slide())
@@ -134,9 +131,7 @@ fun App(rootComponent: RootComponent) {
                             when (val instance = child.instance) {
                                 is RootComponent.Child.List -> NoteListScreen(instance.component)
                                 is RootComponent.Child.Detail -> NoteDetailScreen(instance.component)
-                                is RootComponent.Child.Lock -> {
-
-                                }
+                                is RootComponent.Child.Lock -> {  }
                             }
                         }
                     }
@@ -145,6 +140,5 @@ fun App(rootComponent: RootComponent) {
         }
     }
 }
-
 
 

@@ -41,6 +41,12 @@ val appModule = module {
      */
     single { get<AppDatabase>().noteDao() }
 
+    /**
+     * Provides the AuthManager for handling the PIN lock and security logic.
+     * It's a `single` to ensure the app lock state and timer are shared globally.
+     */
+    single { AuthManager(get()) }
+
 
     /**
      * Provides the implementation for the NoteRepository.
@@ -61,17 +67,13 @@ val appModule = module {
     factory { GetNoteByIdUseCase(get()) }
 
 
-    /**
-     * Provides the AuthManager for handling the PIN lock and security logic.
-     * It's a `single` to ensure the app lock state and timer are shared globally.
-     */
-    single { AuthManager(get()) }
+
 }
 
 
 /**
  * A helper function to initialize Koin from the platform-specific entry points
- * (e.g., from `MainActivity` on Android or `main()` on Desktop).
+ * (e.g., from `MainActivity` on Android).
  */
 fun initKoin(config: (KoinApplication.() -> Unit)? = null) {
     org.koin.core.context.startKoin {

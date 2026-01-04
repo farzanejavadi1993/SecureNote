@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.arkivanov.decompose.defaultComponentContext
-import com.farzane.securenote.di.initKoin
 import com.farzane.securenote.presentation.root.DefaultRootComponent
-import org.koin.android.ext.koin.androidContext
 import android.view.WindowManager
+import com.farzane.securenote.di.appModule
+import org.koin.core.context.startKoin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,11 +20,12 @@ class MainActivity : ComponentActivity() {
             WindowManager.LayoutParams.FLAG_SECURE
         )
 
-        if (org.koin.core.context.GlobalContext.getOrNull() == null) {
-            initKoin {
-                androidContext(applicationContext)
-            }
-        }
+       /* if (org.koin.core.context.GlobalContext.getOrNull() == null) {
+
+
+
+
+        }*/
 
         val root = DefaultRootComponent(
             componentContext = defaultComponentContext()

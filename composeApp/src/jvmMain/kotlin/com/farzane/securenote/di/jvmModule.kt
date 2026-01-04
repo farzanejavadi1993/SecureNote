@@ -17,7 +17,6 @@ val jvmModule = module {
             name = dbFile.absolutePath,
         )
     }
-
     single<NoteExporter> { DesktopNoteExporter() }
     single<KeyValueStorage> { DesktopKeyValueStorage() }
 

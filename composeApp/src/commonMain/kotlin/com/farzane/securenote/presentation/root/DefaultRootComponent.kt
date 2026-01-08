@@ -89,7 +89,7 @@ class DefaultRootComponent(
         stack.subscribe { childStack ->
             val activeChild = childStack.active.instance
             if (activeChild is RootComponent.Child.Detail) {
-                _activeDetail.value = RootComponent.ActiveDetail(activeChild.component)
+                _activeDetail.value = RootComponent.ActiveDetail(activeChild.noteDetailComponent)
             } else {
                 _activeDetail.value = RootComponent.ActiveDetail(null)
             }
@@ -137,13 +137,10 @@ class DefaultRootComponent(
                         val listComponent = stack.value.backStack
                             .map { it.instance }
                             .filterIsInstance<RootComponent.Child.List>()
-                            .lastOrNull()?.component
+                            .lastOrNull()?.noteListComponent
 
                         navigation.pop()
-                        listComponent?.onEvent(NoteListIntent.RefreshState)
-
-
-                    },
+                                      },
                     // NEW: Add a callback for when the user cancels.
                     onCancelled = { navigation.pop() }
                 )
@@ -168,7 +165,7 @@ class DefaultRootComponent(
                     onNoteDeleted = { deletedId ->
                         // 1. Check if the deleted note is the one currently showing in the detail view.
                         val isDeletingActiveDetail =
-                            (_activeDetail.value.component?.state?.value?.id == deletedId)
+                            (_activeDetail.value.noteDetailComponent?.state?.value?.id == deletedId)
 
                         // 2. Remove the deleted note's screen from the backstack history.
                         navigation.navigate { oldStack ->
@@ -185,7 +182,7 @@ class DefaultRootComponent(
                         authManager.lockApp() // Tell the manager to lock the state
                         navigation.bringToFront(Config.Lock) // Navigate to the Lock screen
                     },
-                    onNavigateToLock = { navigation.push(Config.Lock) },
+
 
                     )
             )

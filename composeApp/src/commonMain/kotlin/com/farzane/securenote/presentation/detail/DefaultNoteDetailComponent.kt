@@ -36,9 +36,9 @@ class DefaultNoteDetailComponent(
     private val _state = MutableValue(NoteDetailState(id = noteId))
     override val state: Value<NoteDetailState> = _state
 
-    // A channel for sending one-time events (side effects) to the UI, like showing a snackbar.
-    private val _label = Channel<NoteDetailComponent.Label>()
-    override val labels = _label.receiveAsFlow()
+    // A channel for sending one-time events (side effects) to the UI, like showing a snackBar.
+    private val _effect = Channel<NoteDetailEffect>()
+    override val effect = _effect.receiveAsFlow()
 
     // A dedicated coroutine scope for this component.
     private val scope = coroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -94,8 +94,8 @@ class DefaultNoteDetailComponent(
             val currentState = _state.value
 
             // First, check if the note is empty. If so, show an error and stop.
-            if (currentState.title.isBlank() && currentState.content.isBlank()) {
-                _label.send(NoteDetailComponent.Label.Error("Title and content cannot be empty."))
+            if (currentState.title.isBlank() || currentState.content.isBlank()) {
+                _effect.send(NoteDetailEffect.Error("Title and content cannot be empty."))
                 return@launch
             }
 

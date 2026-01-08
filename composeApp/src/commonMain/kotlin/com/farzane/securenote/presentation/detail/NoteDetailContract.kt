@@ -13,3 +13,6 @@ sealed interface NoteDetailIntent {
     data object Close : NoteDetailIntent
     data object DeleteNote : NoteDetailIntent
 }
+sealed interface NoteDetailEffect {
+    data class Error(val message: String) : NoteDetailEffect
+}

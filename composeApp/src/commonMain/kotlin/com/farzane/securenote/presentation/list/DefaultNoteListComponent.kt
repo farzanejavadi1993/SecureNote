@@ -4,6 +4,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import com.arkivanov.essenty.lifecycle.doOnResume
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.domain.repository.NoteExporter
@@ -11,6 +12,9 @@ import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNotesUseCase
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -30,13 +34,14 @@ class DefaultNoteListComponent(
     private val onNoteSelected: (Long) -> Unit,
     private val onNoteDeleted: (Long) -> Unit,
     private val onLock: () -> Unit,
-    private val onNavigateToLock: () -> Unit,
     private val noteExporter: NoteExporter
 ) : NoteListComponent, ComponentContext by componentContext {
 
-
     private val _state = MutableValue(NoteListState(isLoading = true))
     override val state: Value<NoteListState> = _state
+    private val _effect = Channel<NoteListEffect>()
+    override val effect = _effect.receiveAsFlow()
+
 
     // A dedicated coroutine scope for this component that is cancelled when the component is destroyed.
     private val scope =
@@ -45,11 +50,14 @@ class DefaultNoteListComponent(
         )
 
     init {
-        _state.value = _state.value.copy(hasPin = authManager.hasPin())
+
         // Automatically load notes as soon as the component is created.
         loadNotes()
-    }
 
+        lifecycle.doOnResume {
+            _state.value = _state.value.copy(hasPin = authManager.hasPin())
+        }
+    }
 
 
     /**
@@ -66,18 +74,9 @@ class DefaultNoteListComponent(
             is NoteListIntent.ToggleNoteSelection -> onToggleNoteSelection(intent.noteId)
             is NoteListIntent.ToggleSelectionMode -> onToggleSelectionMode(intent.noteId)
             is NoteListIntent.LockApp -> onLock() // Direct pass-through for navigation
-            is NoteListIntent.NavigateToLock -> onNavigateToLock()
             is NoteListIntent.RemovePin -> {
                 authManager.removePin()
                 _state.value = _state.value.copy(hasPin = false)
-            }
-            is NoteListIntent.RefreshState -> {
-                // Re-check the PIN status and update the UI.
-                _state.value = _state.value.copy(hasPin = authManager.hasPin())
-            }
-            is NoteListIntent.OnSnackBarShown -> {
-                // Clear the message from the state so it doesn't show again.
-                _state.value = _state.value.copy(exportMessage = null)
             }
         }
     }
@@ -89,13 +88,15 @@ class DefaultNoteListComponent(
             getNotesUseCase().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
-                        _state.value = _state.value.copy(isLoading = true, error = null)
+                        _state.value = _state.value.copy(isLoading = true)
                     }
+
                     is Resource.Success -> {
-                        _state.value = _state.value.copy(isLoading = false, notes = result.data, error = null)
+                        _state.value = _state.value.copy(isLoading = false, notes = result.data)
                     }
+
                     is Resource.Error -> {
-                        _state.value = _state.value.copy(isLoading = false, error = result.message)
+                        _effect.send(NoteListEffect.ShowError(result.message))
                     }
                 }
             }
@@ -142,22 +143,27 @@ class DefaultNoteListComponent(
             }
 
             if (notesToExport.isEmpty()) {
-                _state.value = _state.value.copy(exportMessage = "No notes to export.")
+                _effect.send(NoteListEffect.ShowMessage("No notes to export."))
                 return@launch
             }
 
             when (val result = noteExporter.exportNotes(notesToExport)) {
                 is Resource.Success -> {
                     // On success, show a message and automatically exit selection mode.
+                    _effect.send(NoteListEffect.ShowMessage(result.data))
                     _state.value = _state.value.copy(
-                        exportMessage = result.data,
                         isMultiSelectionMode = false,
                         selectedNoteIds = emptySet()
                     )
                 }
+
                 is Resource.Error -> {
-                    _state.value = _state.value.copy(exportMessage = "Export failed: ${result.message}")
+                    _effect.send(
+                        NoteListEffect.ShowMessage
+                            ("Export failed: ${result.message}")
+                    )
                 }
+
                 else -> {}
             }
         }

@@ -52,7 +52,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
-import com.farzane.securenote.core.util.rememberPermissionLauncher
+import com.farzane.securenote.presentation.util.rememberPermissionLauncher
 import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.presentation.components.ConfirmationDialog
 import kotlinx.coroutines.launch
@@ -78,15 +78,6 @@ fun NoteListScreen(
     var isAddDialogOpen by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    // Shows a snackbar message when the export status changes.
-    LaunchedEffect(state.exportMessage) {
-        state.exportMessage?.let { message ->
-            snackBarHostState.showSnackbar(message = message)
-            component.onEvent(NoteListIntent.OnSnackBarShown)
-        }
-    }
-
     var showRemovePinDialog by remember { mutableStateOf(false) }
 
     // Prepares the permission request for saving files.
@@ -97,6 +88,20 @@ fun NoteListScreen(
         } else {
             scope.launch {
                 snackBarHostState.showSnackbar("Permission needed to save file.")
+            }
+        }
+    }
+
+    // Shows a snackbar message when the export status changes.
+    LaunchedEffect(component) {
+        component.effect.collect { listEffect ->
+            when (listEffect) {
+                is NoteListEffect.ShowMessage -> {
+                    snackBarHostState.showSnackbar(listEffect.message)
+                }
+                is NoteListEffect.ShowError -> {
+                    snackBarHostState.showSnackbar("Error: ${listEffect.error}")
+                }
             }
         }
     }
@@ -118,14 +123,13 @@ fun NoteListScreen(
                     onExport = { showExportDialog = true },
                     hasPin = state.hasPin,
                     onLock = {
-
-                       // component.onEvent(NoteListIntent.LockApp)
+                        // component.onEvent(NoteListIntent.LockApp)
                         if (state.hasPin) {
                             // If PIN exists, show a dialog to confirm removal.
                             showRemovePinDialog = true
                         } else {
                             // If no PIN exists, send intent to navigate to Lock screen setup.
-                            component.onEvent(NoteListIntent.NavigateToLock)
+                            component.onEvent(NoteListIntent.LockApp)
                         }
                     }
                 )
@@ -197,7 +201,11 @@ fun NoteListScreen(
 
     // Export Confirmation Dialog
     if (showExportDialog) {
-        val count = if (state.isMultiSelectionMode) state.selectedNoteIds.size else state.notes.size
+        val count =
+            if (state.isMultiSelectionMode)
+                state.selectedNoteIds.size
+            else
+                state.notes.size
         ConfirmationDialog(
 
             "Export Notes",
@@ -270,7 +278,7 @@ fun NoteListScreen(
  * Displays the scrollable list of notes.
  */
 @Composable
- fun NoteList(
+fun NoteList(
     notes: List<Note>,
     selectedIds: Set<Long>,
     isInSelectionMode: Boolean,
@@ -300,7 +308,12 @@ fun NoteListScreen(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SelectionAppBar(selectedCount: Int, onClose: () -> Unit, onExport: () -> Unit, onDelete: () -> Unit) {
+private fun SelectionAppBar(
+    selectedCount: Int,
+    onClose: () -> Unit,
+    onExport: () -> Unit,
+    onDelete: () -> Unit
+) {
     TopAppBar(
         title = { Text("$selectedCount Selected") },
         navigationIcon = {
@@ -334,7 +347,8 @@ private fun SelectionAppBar(selectedCount: Int, onClose: () -> Unit, onExport: (
 private fun NormalAppBar(
     onExport: () -> Unit,
     hasPin: Boolean,
-    onLock: () -> Unit) {
+    onLock: () -> Unit
+) {
     TopAppBar(
         title = { Text("Secure Notes") },
         modifier = Modifier.shadow(elevation = 4.dp),

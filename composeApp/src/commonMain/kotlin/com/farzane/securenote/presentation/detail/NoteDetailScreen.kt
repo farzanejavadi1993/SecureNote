@@ -5,19 +5,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,9 +39,24 @@ fun NoteDetailScreen(
 
     // A state to control the visibility of the delete confirmation dialog.
     var showDeleteDialog by remember { mutableStateOf(false) }
+    // Setup for showing snackBars (like errors).
+    val snackBarHostState = remember { SnackbarHostState() }
+
+
+    LaunchedEffect(component) {
+        component.effect.collect { detailEffect ->
+            when (detailEffect) {
+                is NoteDetailEffect.Error -> {
+                    // Show the snackbar when an error label arrives
+                    snackBarHostState.showSnackbar(detailEffect.message)
+                }
+            }
+        }
+    }
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackBarHostState) },
         topBar = {
             NoteDetailAppBar(
                 isEditing = state.id != null, // We are editing if the note has an ID.

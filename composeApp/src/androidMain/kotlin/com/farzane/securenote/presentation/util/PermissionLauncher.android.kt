@@ -1,4 +1,4 @@
-package com.farzane.securenote.core.util
+package com.farzane.securenote.presentation.util
 
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -38,6 +38,6 @@ actual fun rememberPermissionLauncher(onResult: (Boolean) -> Unit): () -> Unit {
             } else {
                 onResult(true)
             }
-        }
+         }
     }
 }

@@ -1,4 +1,4 @@
-package com.farzane.securenote.core.util
+package com.farzane.securenote.presentation.util
 
 
 import androidx.compose.runtime.Composable

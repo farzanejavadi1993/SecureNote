@@ -5,11 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface NoteDetailComponent {
     val state: Value<NoteDetailState>
-    val labels: Flow<Label>
+    val effect: Flow<NoteDetailEffect>
     fun onEvent(intent: NoteDetailIntent)
 
-    sealed interface Label {
-        data class Error(val message: String) : Label
-    }
+
 
 }

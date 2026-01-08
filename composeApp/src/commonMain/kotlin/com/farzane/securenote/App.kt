@@ -60,9 +60,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.presentation.lock.LockScreen
-import org.koin.compose.koinInject
 
 /**
  * The root Composable of the entire application.
@@ -95,10 +93,10 @@ fun App(rootComponent: RootComponent) {
             // --- Security Check: Show Lock Screen if needed ---
             // If the active screen is the Lock Screen, show it on top of everything else.
             if (activeInstance is RootComponent.Child.Lock) {
-                val lockState by activeInstance.component.state.subscribeAsState()
+                val lockState by activeInstance.authComponent.state.subscribeAsState()
                 LockScreen(
                     isSetupMode = lockState.isSetupMode,
-                    onPinSuccess = { pin -> activeInstance.component.onPinEnter(pin) },
+                    onPinSuccess = { pin -> activeInstance.authComponent.onPinEnter(pin) },
                     )
             } else {
                 // --- Main App Content (if unlocked) ---
@@ -109,7 +107,7 @@ fun App(rootComponent: RootComponent) {
                     if (isSplitView) {
                         // --- TABLET / DESKTOP LAYOUT (Master-Detail) ---
                         val activeDetailWrapper by rootComponent.activeDetail.subscribeAsState()
-                        val activeDetail = activeDetailWrapper.component
+                        val activeDetail = activeDetailWrapper.noteDetailComponent
 
                         // Find the NoteList component from the stack.
                         val listChild = stack.items.find {
@@ -118,7 +116,7 @@ fun App(rootComponent: RootComponent) {
 
                         if (listChild is RootComponent.Child.List) {
                             MasterDetailLayout(
-                                listComponent = listChild.component,
+                                listComponent = listChild.noteListComponent,
                                 detailComponent = activeDetail
                             )
                         }
@@ -129,8 +127,8 @@ fun App(rootComponent: RootComponent) {
                             animation = stackAnimation(slide())
                         ) { child ->
                             when (val instance = child.instance) {
-                                is RootComponent.Child.List -> NoteListScreen(instance.component)
-                                is RootComponent.Child.Detail -> NoteDetailScreen(instance.component)
+                                is RootComponent.Child.List -> NoteListScreen(instance.noteListComponent)
+                                is RootComponent.Child.Detail -> NoteDetailScreen(instance.noteDetailComponent)
                                 is RootComponent.Child.Lock -> {  }
                             }
                         }

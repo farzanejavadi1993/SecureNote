@@ -8,8 +8,4 @@ interface AuthComponent {
     fun onCancel()
 }
 
-data class AuthState(
-    val isSetupMode: Boolean,
-    val isAuthenticated: Boolean = false,
-    val error: String? = null
-)
+

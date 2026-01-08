@@ -20,12 +20,6 @@ class MainActivity : ComponentActivity() {
             WindowManager.LayoutParams.FLAG_SECURE
         )
 
-       /* if (org.koin.core.context.GlobalContext.getOrNull() == null) {
-
-
-
-
-        }*/
 
         val root = DefaultRootComponent(
             componentContext = defaultComponentContext()

@@ -97,7 +97,8 @@ fun App(rootComponent: RootComponent) {
                 LockScreen(
                     isSetupMode = lockState.isSetupMode,
                     onPinSuccess = { pin -> activeInstance.authComponent.onPinEnter(pin) },
-                    )
+                    onCancel = { activeInstance.authComponent.onCancel() }
+                )
             } else {
                 // --- Main App Content (if unlocked) ---
                 // This checks the screen size to decide which layout to use.

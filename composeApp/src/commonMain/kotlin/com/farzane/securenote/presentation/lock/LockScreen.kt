@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,14 +26,15 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun LockScreen(
     isSetupMode: Boolean,
-    onPinSuccess: (String) -> Unit // Called when the PIN is set up or correctly entered.
+    onPinSuccess: (String) -> Unit, // Called when the PIN is set up or correctly entered.
+    onCancel: () -> Unit
 ) {
     // --- Internal State ---
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") } // Used only in setup mode.
 
     // Manages the flow: 0=Unlock/Enter, 1=Create PIN, 2=Confirm PIN.
-    var step by remember { mutableStateOf(if (isSetupMode) 1 else 0) }
+    var step by remember { mutableIntStateOf(if (isSetupMode) 1 else 0) }
     var error by remember { mutableStateOf<String?>(null) }
 
     // --- UI Layout ---
@@ -41,21 +44,49 @@ fun LockScreen(
         verticalArrangement = Arrangement.Center
     ) {
         // 1. Title
-        Text(
-            text = when (step) {
-                0 -> "Enter Passcode"
-                1 -> "Create a Passcode"
-                2 -> "Confirm Passcode"
-                else -> ""
-            },
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Spacer on the left to keep the title centered.
+            // We make it invisible but it takes up the same space as the icon.
+            Spacer(modifier = Modifier.size(48.dp))
+
+            // 1. Title
+            Text(
+                text = when (step) {
+                    0 -> "Enter Passcode"
+                    1 -> "Create a Passcode"
+                    2 -> "Confirm Passcode"
+                    else -> ""
+                },
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            // Show the Close icon only in setup mode.
+            if (isSetupMode) {
+                IconButton(onClick = onCancel) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel PIN Setup"
+                    )
+                }
+            } else {
+                // Another spacer on the right to keep the title centered in unlock mode.
+                Spacer(modifier = Modifier.size(48.dp))
+            }
+        }
+
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // 2. PIN Dots Indicator
         PinDots(
-            pin = if (step == 2) confirmPin else pin
+            pin = if (step == 2)
+                confirmPin
+            else
+                pin
         )
 
         // Show an error message if the PINs don't match.

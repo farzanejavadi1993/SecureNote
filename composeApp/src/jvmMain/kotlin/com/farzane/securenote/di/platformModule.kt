@@ -8,23 +8,17 @@ import com.farzane.securenote.domain.manager.KeyValueStorage
 import com.farzane.securenote.domain.repository.NoteExporter
 import org.koin.dsl.module
 import java.io.File
-actual fun getDatabaseBuilder(): RoomDatabase.Builder<AppDatabase> {
-    val dbFile = File(System.getProperty("java.io.tmpdir"), "note_database.db")
-    return Room.databaseBuilder<AppDatabase>(
-        name = dbFile.absolutePath,
-    )
-}
+
 actual val platformModule = module {
     single<RoomDatabase.Builder<AppDatabase>> {
-        val dbFile = File(System.getProperty("java.io.tmpdir"), "my_room.db")
+        val dbFile = File(System.getProperty("java.io.tmpdir"), "note_database.db")
         Room.databaseBuilder<AppDatabase>(
             name = dbFile.absolutePath,
         )
     }
+
     single<NoteExporter> { DesktopNoteExporter() }
+
     single<KeyValueStorage> { DesktopKeyValueStorage() }
 
-    single<AppDatabase> {
-        getDatabaseBuilder().build()
-    }
 }

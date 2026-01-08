@@ -5,20 +5,13 @@ import androidx.compose.ui.window.application
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import com.farzane.securenote.di.appModule
 import com.farzane.securenote.di.initKoin
-import com.farzane.securenote.di.jvmModule
-import com.farzane.securenote.di.platformModule
 import com.farzane.securenote.presentation.root.DefaultRootComponent
-import org.koin.core.context.startKoin
 import javax.swing.SwingUtilities
 
 fun main() {
 
-  startKoin {
-        modules(appModule, jvmModule)
-    }
-
+    initKoin()
 
     val lifecycle = LifecycleRegistry()
 

@@ -17,7 +17,6 @@ import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
 import com.farzane.securenote.presentation.lock.DefaultAuthComponent
 import com.farzane.securenote.presentation.detail.DefaultNoteDetailComponent
-import com.farzane.securenote.presentation.list.NoteListIntent
 import kotlinx.serialization.Serializable
 import org.koin.core.component.KoinComponent
 

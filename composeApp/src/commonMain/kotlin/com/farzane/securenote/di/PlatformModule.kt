@@ -1,7 +1,5 @@
 package com.farzane.securenote.di
 
-import androidx.room.RoomDatabase
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.farzane.securenote.data.local.database.AppDatabase
 import com.farzane.securenote.data.repository.NoteRepositoryImpl
 import com.farzane.securenote.domain.manager.AuthManager
@@ -10,8 +8,8 @@ import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
 import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
-import kotlinx.coroutines.Dispatchers
 import org.koin.core.KoinApplication
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
@@ -20,6 +18,7 @@ import org.koin.dsl.module
  * like Use Cases, Repositories, and the Database.
  */
 
+expect val platformModule: Module
 val appModule = module {
 
     /**
@@ -27,14 +26,8 @@ val appModule = module {
      * It's a `single` so there's only one database instance for the whole app.
      * It depends on a platform-specific `RoomDatabase.Builder` from `platformModule`.
      */
-    single<AppDatabase> {
-        val builder = get<RoomDatabase.Builder<AppDatabase>>()
-        builder
-            .setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
-    }
 
+    single<AppDatabase> { getRoomDatabase(get()) }
     /**
      * Provides the NoteDao (Data Access Object) from the database.
      * Koin gets the `AppDatabase` singleton and calls `.noteDao()` on it.

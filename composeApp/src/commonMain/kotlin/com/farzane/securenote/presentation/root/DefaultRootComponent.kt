@@ -40,6 +40,7 @@ class DefaultRootComponent(
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
     private val getNoteByIdUseCase by inject<GetNoteByIdUseCase>()
     private val noteExporter by inject<NoteExporter>()
+
     /**
      * Defines all possible screens (Configurations) in our app's navigation stack.
      * We use @Serializable so Decompose can save/restore the navigation history.
@@ -56,6 +57,7 @@ class DefaultRootComponent(
         @Serializable
         data class NoteDetail(val noteId: Long?) : Config
     }
+
     // The navigation controller that lets us push, pop, or replace screens.
     private val navigation = StackNavigation<Config>()
 
@@ -125,14 +127,13 @@ class DefaultRootComponent(
                     // When authenticated, just close the lock screen (pop).
                     onAuthenticated = {
                         navigation.pop()
-                                      },
+                    },
                     // NEW: Add a callback for when the user cancels.
                     onCancelled = { navigation.pop() }
                 )
             )
 
             Config.NoteList -> RootComponent.Child.List(
-
                 DefaultNoteListComponent(
                     authManager = authManager,
                     componentContext = context,
@@ -164,7 +165,6 @@ class DefaultRootComponent(
                         }
                     },
                     onLock = {
-
                         navigation.bringToFront(Config.Lock) // Navigate to the Lock screen
                     },
 

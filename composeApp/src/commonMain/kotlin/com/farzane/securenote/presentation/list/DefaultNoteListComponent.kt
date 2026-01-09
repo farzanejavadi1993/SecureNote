@@ -84,10 +84,6 @@ class DefaultNoteListComponent(
         scope.launch {
             getAllNotesUseCase().collect { result ->
                 when (result) {
-                    is Resource.Loading -> {
-                        _state.value = _state.value.copy(isLoading = true)
-                    }
-
                     is Resource.Success -> {
                         _state.value = _state.value.copy(isLoading = false, notes = result.data)
                     }
@@ -165,7 +161,6 @@ class DefaultNoteListComponent(
                     )
                 }
 
-                else -> {}
             }
         }
     }

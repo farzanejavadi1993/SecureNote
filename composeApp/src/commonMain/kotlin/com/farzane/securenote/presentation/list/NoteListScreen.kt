@@ -145,7 +145,6 @@ fun NoteListScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-
             when {
                 // Show a spinner while notes are loading.
                 state.isLoading -> {

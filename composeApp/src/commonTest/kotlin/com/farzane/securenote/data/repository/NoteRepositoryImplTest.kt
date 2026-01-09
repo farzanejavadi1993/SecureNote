@@ -11,7 +11,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlin.collections.get
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -77,7 +76,7 @@ class NoteRepositoryImplTest {
         coEvery { dao.insertNote(any()) } throws RuntimeException("Disk is full")
 
         // Act: Call the function
-        val result = repository.insertNote(noteToInsert)
+        val result = repository.addNote(noteToInsert)
 
         // Assert: Check the return value
         assertTrue(result is Resource.Error, "Result should be Error")

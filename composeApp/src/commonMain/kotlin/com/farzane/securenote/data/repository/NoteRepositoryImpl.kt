@@ -34,7 +34,7 @@ class NoteRepositoryImpl(
             }
     }
 
-    override suspend fun insertNote(note: Note): Resource<Unit> {
+    override suspend fun addNote(note: Note): Resource<Unit> {
         return try {
             // 2. ENCRYPT: Domain -> Database
             val encryptedNote = note.copy(

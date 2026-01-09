@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 class GetNotesUseCaseTest {
 
     private val repository: NoteRepository = mockk()
-    private val getNotesUseCase = GetNotesUseCase(repository)
+    private val getAllNotesUseCase = GetAllNotesUseCase(repository)
 
     @Test
     fun `returns notes sorted by newest first`() = runTest {
@@ -32,7 +32,7 @@ class GetNotesUseCaseTest {
         every { repository.getAllNotes() } returns flowOf(Resource.Success(unsortedList))
 
         // Act & Assert
-        getNotesUseCase().test {
+        getAllNotesUseCase().test {
             val result = awaitItem()
             val data = (result as Resource.Success).data
 
@@ -52,7 +52,7 @@ class GetNotesUseCaseTest {
         every { repository.getAllNotes() } returns flowOf(Resource.Success(notes))
 
         // Act & Assert
-        getNotesUseCase().test {
+        getAllNotesUseCase().test {
             val result = awaitItem()
             assertTrue(result is Resource.Success)
             assertEquals(notes, result.data)
@@ -67,7 +67,7 @@ class GetNotesUseCaseTest {
         every { repository.getAllNotes() } returns flowOf(Resource.Error(errorMessage))
 
         // Act & Assert
-        getNotesUseCase().test {
+        getAllNotesUseCase().test {
             val result = awaitItem()
             assertTrue(result is Resource.Error)
             assertEquals(errorMessage, result.message)

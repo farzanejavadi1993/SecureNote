@@ -6,7 +6,7 @@ import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
-import com.farzane.securenote.domain.usecase.GetNotesUseCase
+import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -33,7 +33,7 @@ class DefaultNoteListComponentTest {
 
     // --- Mocks ---
     // We mock the dependencies because we are testing the Component, not the UseCases.
-    private val getNotesUseCase: GetNotesUseCase = mockk()
+    private val getAllNotesUseCase: GetAllNotesUseCase = mockk()
     private val addNoteUseCase: AddNoteUseCase = mockk()
     private val deleteNoteUseCase: DeleteNoteUseCase = mockk()
     private val noteExporter: NoteExporter = mockk()
@@ -64,7 +64,7 @@ class DefaultNoteListComponentTest {
             Note(1L, "Meeting", "Discuss project", 1000L),
             Note(2L, "Gym", "Leg day", 2000L)
         )
-        every { getNotesUseCase() } returns flowOf(Resource.Success(dummyNotes))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Success(dummyNotes))
 
         // When (Act)
         val component = createComponent()
@@ -84,7 +84,7 @@ class DefaultNoteListComponentTest {
     fun `shows error message when loading notes fails`() = runTest(testDispatcher) {
         // Given
         val errorMessage = "Failed to connect to database"
-        every { getNotesUseCase() } returns flowOf(Resource.Error(errorMessage))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Error(errorMessage))
 
         // When
         val component = createComponent()
@@ -101,7 +101,7 @@ class DefaultNoteListComponentTest {
     fun `saves new note when AddNote event is triggered`() = runTest(testDispatcher) {
         // Given
         // We need the init block to pass first
-        every { getNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
 
         // Mock the add action returning Success
         coEvery {
@@ -130,7 +130,7 @@ class DefaultNoteListComponentTest {
     fun `deletes note when DeleteNote event is triggered`() = runTest(testDispatcher) {
         // Given
         val noteIdToDelete = 99L
-        every { getNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
 
         // Mock delete action
         coEvery { deleteNoteUseCase(noteIdToDelete) } returns Resource.Success(Unit)
@@ -150,7 +150,7 @@ class DefaultNoteListComponentTest {
     fun `navigates to detail screen when note is selected`() = runTest(testDispatcher) {
         // Given
         val selectedNoteId = 55L
-        every { getNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
 
         val component = createComponent()
         advanceUntilIdle()
@@ -169,7 +169,7 @@ class DefaultNoteListComponentTest {
         val notes = listOf(Note(1, "A", "B", 100))
         val successPath = "Saved to /Downloads/notes.txt"
 
-        every { getNotesUseCase() } returns flowOf(Resource.Success(notes))
+        every { getAllNotesUseCase() } returns flowOf(Resource.Success(notes))
         coEvery { noteExporter.exportNotes(notes) } returns Resource.Success(successPath)
 
         val component = createComponent()
@@ -188,7 +188,7 @@ class DefaultNoteListComponentTest {
     private fun createComponent(): DefaultNoteListComponent {
         return DefaultNoteListComponent(
             componentContext = DefaultComponentContext(LifecycleRegistry()),
-            getNotesUseCase = getNotesUseCase,
+            getAllNotesUseCase = getAllNotesUseCase,
             addNoteUseCase = addNoteUseCase,
             deleteNoteUseCase = deleteNoteUseCase,
             onNoteSelected = onNoteSelectedCallback,

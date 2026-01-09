@@ -1,9 +1,9 @@
 package com.farzane.securenote.di
 
 import androidx.room.Room
-import com.farzane.securenote.data.AndroidKeyValueStorage
+import com.farzane.securenote.domain.manager.AndroidKeyValueStorage
 import com.farzane.securenote.data.local.database.AppDatabase
-import com.farzane.securenote.data.repository.AndroidNoteExporter
+import com.farzane.securenote.domain.repository.AndroidNoteExporter
 import com.farzane.securenote.domain.manager.KeyValueStorage
 import com.farzane.securenote.domain.repository.NoteExporter
 import org.koin.dsl.module

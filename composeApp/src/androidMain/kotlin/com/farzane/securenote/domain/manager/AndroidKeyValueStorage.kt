@@ -1,7 +1,6 @@
-package com.farzane.securenote.data
+package com.farzane.securenote.domain.manager
 
 import android.content.Context
-import com.farzane.securenote.domain.manager.KeyValueStorage
 import androidx.core.content.edit
 
 class AndroidKeyValueStorage(context: Context) : KeyValueStorage {
@@ -20,6 +19,6 @@ class AndroidKeyValueStorage(context: Context) : KeyValueStorage {
     }
 
     override fun clearPin() {
-        prefs.edit().remove("user_pin").apply()
+        prefs.edit { remove("user_pin") }
     }
 }

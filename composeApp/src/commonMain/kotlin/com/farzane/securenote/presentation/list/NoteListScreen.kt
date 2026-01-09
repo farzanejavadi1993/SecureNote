@@ -278,7 +278,7 @@ fun NoteListScreen(
  * Displays the scrollable list of notes.
  */
 @Composable
-fun NoteList(
+private fun NoteList(
     notes: List<Note>,
     selectedIds: Set<Long>,
     isInSelectionMode: Boolean,
@@ -393,7 +393,6 @@ private fun NoteItemRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 2.dp)
-
             // This modifier handles both a regular tap (onClick) and a long press (onLongClick).
             .combinedClickable(
                 onClick = onNoteClick,

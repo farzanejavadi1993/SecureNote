@@ -47,7 +47,7 @@ class NoteDatabaseTest {
             Note(id = null, title = "Integration Test", content = "Persist Me", timestamp = 123L)
 
         // Act: Insert via Repository
-        val insertResult = repository.insertNote(note)
+        val insertResult = repository.addNote(note)
 
         // Assert: Check insert result
         assertTrue(insertResult is Resource.Success, "Insert should succeed")
@@ -71,9 +71,9 @@ class NoteDatabaseTest {
         val newNote = Note(id = null, title = "New", content = "...", timestamp = 9000L)
         val midNote = Note(id = null, title = "Mid", content = "...", timestamp = 5000L)
 
-        repository.insertNote(oldNote)
-        repository.insertNote(newNote)
-        repository.insertNote(midNote)
+        repository.addNote(oldNote)
+        repository.addNote(newNote)
+        repository.addNote(midNote)
 
         // Act
         val result = repository.getAllNotes().first()
@@ -105,7 +105,7 @@ class NoteDatabaseTest {
     fun `verifies deletion removes data from real database`() = runTest {
         // Arrange
         val note = Note(id = null, title = "Delete Me", content = "...", timestamp = 100L)
-        repository.insertNote(note)
+        repository.addNote(note)
 
         // We need to fetch it to get the auto-generated ID
         val savedList = (repository.getAllNotes().first() as Resource.Success).data
@@ -125,7 +125,7 @@ class NoteDatabaseTest {
     fun `verifies getting a single note by ID`() = runTest {
         // Arrange
         val note = Note(id = null, title = "Find Me", content = "...", timestamp = 1L)
-        repository.insertNote(note)
+        repository.addNote(note)
 
         // Get the real ID
         val list = (repository.getAllNotes().first() as Resource.Success).data

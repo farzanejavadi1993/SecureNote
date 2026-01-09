@@ -54,7 +54,6 @@ class DefaultNoteDetailComponent(
     private fun loadNote(id: Long) {
         scope.launch {
             val note = getNoteByIdUseCase(id)
-
             if (note != null) {
                 _state.value = _state.value.copy(
                     title = note.title,

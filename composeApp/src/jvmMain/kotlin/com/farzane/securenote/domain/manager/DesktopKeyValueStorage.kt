@@ -1,12 +1,7 @@
-package com.farzane.securenote.data
+package com.farzane.securenote.domain.manager
 
-
-import com.farzane.securenote.domain.manager.KeyValueStorage
 import java.io.File
 import java.util.Properties
-import kotlin.io.inputStream
-import kotlin.io.outputStream
-import kotlin.io.use
 
 class DesktopKeyValueStorage : KeyValueStorage {
     // We use a simple properties file to store the PIN on Desktop

@@ -1,4 +1,4 @@
-package com.farzane.securenote.data.repository
+package com.farzane.securenote.domain.repository
 
 import android.content.ContentValues
 import android.content.Context
@@ -7,12 +7,10 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
-import com.farzane.securenote.domain.repository.NoteExporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-
 
 class AndroidNoteExporter(private val context: Context) : NoteExporter {
     override suspend fun exportNotes(notes: List<Note>): Resource<String> =
@@ -51,8 +49,7 @@ class AndroidNoteExporter(private val context: Context) : NoteExporter {
                     }
                     return@withContext Resource.Success("Saved to Downloads folder")
 
-                }
-                else {
+                } else {
                     val downloadsDir =
                         Environment.getExternalStoragePublicDirectory(
                             Environment.DIRECTORY_DOWNLOADS

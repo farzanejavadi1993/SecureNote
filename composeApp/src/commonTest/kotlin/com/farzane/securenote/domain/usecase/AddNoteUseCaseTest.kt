@@ -26,7 +26,7 @@ class AddNoteUseCaseTest {
 
         // Capture what was sent to the repo
         val noteSlot = slot<Note>()
-        coVerify { repository.insertNote(capture(noteSlot)) }
+        coVerify { repository.addNote(capture(noteSlot)) }
 
         // Verify the data is correct
         assertEquals("Groceries", noteSlot.captured.title)
@@ -44,7 +44,7 @@ class AddNoteUseCaseTest {
 
         // Capture
         val noteSlot = slot<Note>()
-        coVerify { repository.insertNote(capture(noteSlot)) }
+        coVerify { repository.addNote(capture(noteSlot)) }
 
         // Verify ID was preserved (this ensures it updates instead of creating new)
         assertEquals(existingId, noteSlot.captured.id)

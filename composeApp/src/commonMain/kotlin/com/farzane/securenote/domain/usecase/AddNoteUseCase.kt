@@ -10,10 +10,9 @@ class AddNoteUseCase(private val repository: NoteRepository) {
         id: Long? = null,
         title: String,
         content: String,
+        ): Resource<Unit> {
 
-    ): Resource<Unit> {
-
-        if (title.isBlank() && content.isBlank()) {
+        if (title.isBlank() || content.isBlank()) {
             return Resource.Error("Title and content cannot be empty")
         }
         val note = Note(
@@ -22,6 +21,6 @@ class AddNoteUseCase(private val repository: NoteRepository) {
             content = content,
             timestamp = System.currentTimeMillis()
         )
-        return repository.insertNote(note)
+        return repository.addNote(note)
     }
 }

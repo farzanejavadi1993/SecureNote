@@ -1,11 +1,11 @@
-package com.farzane.securenote.data.repository
+package com.farzane.securenote.domain.repository
 
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
-import com.farzane.securenote.domain.repository.NoteExporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.time.Instant
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -17,7 +17,7 @@ class DesktopNoteExporter : NoteExporter {
             append("--- My Secure Notes ---\n\n")
             notes.forEach { note ->
                 append("Title: ${note.title}\n")
-                append("Date: ${java.time.Instant.ofEpochMilli(note.timestamp)}\n")
+                append("Date: ${Instant.ofEpochMilli(note.timestamp)}\n")
                 append("Content:\n${note.content}\n")
                 append("---------------------------\n\n")
             }

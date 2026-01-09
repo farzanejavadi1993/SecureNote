@@ -9,7 +9,7 @@ import com.farzane.securenote.domain.repository.NoteRepository
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
-import com.farzane.securenote.domain.usecase.GetNotesUseCase
+import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
 import kotlinx.coroutines.Dispatchers
 import org.koin.core.KoinApplication
 import org.koin.dsl.module
@@ -61,7 +61,7 @@ val appModule = module {
      * These are defined as `factory` because they are simple, stateless classes.
      * A new instance will be created every time one is requested.
      */
-    factory { GetNotesUseCase(get()) }
+    factory { GetAllNotesUseCase(get()) }
     factory { AddNoteUseCase(get()) }
     factory { DeleteNoteUseCase(get()) }
     factory { GetNoteByIdUseCase(get()) }

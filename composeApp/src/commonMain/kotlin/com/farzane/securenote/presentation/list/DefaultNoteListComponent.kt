@@ -10,10 +10,9 @@ import com.farzane.securenote.domain.manager.AuthManager
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
-import com.farzane.securenote.domain.usecase.GetNotesUseCase
+import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -28,7 +27,7 @@ import kotlinx.coroutines.launch
 class DefaultNoteListComponent(
     componentContext: ComponentContext,
     private val authManager: AuthManager,
-    private val getNotesUseCase: GetNotesUseCase,
+    private val getAllNotesUseCase: GetAllNotesUseCase,
     private val addNoteUseCase: AddNoteUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val onNoteSelected: (Long) -> Unit,
@@ -50,7 +49,6 @@ class DefaultNoteListComponent(
         )
 
     init {
-
         // Automatically load notes as soon as the component is created.
         loadNotes()
 
@@ -58,7 +56,6 @@ class DefaultNoteListComponent(
             _state.value = _state.value.copy(hasPin = authManager.hasPin())
         }
     }
-
 
     /**
      * Main entry point for all user actions from the UI.
@@ -85,7 +82,7 @@ class DefaultNoteListComponent(
     /** Loads all notes from the database. */
     private fun loadNotes() {
         scope.launch {
-            getNotesUseCase().collect { result ->
+            getAllNotesUseCase().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
                         _state.value = _state.value.copy(isLoading = true)
@@ -110,8 +107,7 @@ class DefaultNoteListComponent(
         scope.launch {
             val result = addNoteUseCase(id = null, title = title, content = content)
             if (result is Resource.Error) {
-                // In a real app, this should trigger a snackbar via a side-effect channel.
-                println("Error adding note: ${result.message}")
+                _effect.send(NoteListEffect.ShowMessage(result.message))
             }
         }
     }
@@ -122,11 +118,16 @@ class DefaultNoteListComponent(
     private fun onDeleteNote(noteId: Long) {
         scope.launch {
             val result = deleteNoteUseCase(noteId)
+
             if (result is Resource.Success) {
                 // Notify the root component so it can clear the detail view if necessary.
                 onNoteDeleted(noteId)
             } else if (result is Resource.Error) {
-                println("Error deleting note: ${result.message}")
+                _effect.send(
+                    NoteListEffect.ShowMessage(
+                        "Error deleting note: ${result.message}"
+                    )
+                )
             }
         }
     }

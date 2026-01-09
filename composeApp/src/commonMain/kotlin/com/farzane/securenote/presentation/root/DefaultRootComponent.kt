@@ -2,7 +2,7 @@ package com.farzane.securenote.presentation.root
 
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
-import com.farzane.securenote.domain.usecase.GetNotesUseCase
+import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
 import com.farzane.securenote.presentation.list.DefaultNoteListComponent
 import org.koin.core.component.inject
 import kotlin.getValue
@@ -35,7 +35,7 @@ class DefaultRootComponent(
 ) : RootComponent, ComponentContext by componentContext, KoinComponent {
     // --- Dependencies (from Koin) ---
     private val authManager by inject<AuthManager>()
-    private val getNotesUseCase by inject<GetNotesUseCase>()
+    private val getAllNotesUseCase by inject<GetAllNotesUseCase>()
     private val addNoteUseCase by inject<AddNoteUseCase>()
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
     private val getNoteByIdUseCase by inject<GetNoteByIdUseCase>()
@@ -99,16 +99,7 @@ class DefaultRootComponent(
             override fun onResume() {
                 // Only check for auto-lock IF the user has a PIN enabled.
                 if (authManager.hasPin()) {
-                    // When the app comes to the foreground:
-                    authManager.checkShouldLock()
-
-                    if (
-                        authManager.isAppLocked &&
-                        stack.value.active.configuration !is Config.Lock
-                    ) {
-                        // Show the lock screen on top of the current screen.
-                        navigation.push(Config.Lock)
-                    }
+                    navigation.push(Config.Lock)
                 }
             }
 
@@ -133,11 +124,6 @@ class DefaultRootComponent(
 
                     // When authenticated, just close the lock screen (pop).
                     onAuthenticated = {
-                        val listComponent = stack.value.backStack
-                            .map { it.instance }
-                            .filterIsInstance<RootComponent.Child.List>()
-                            .lastOrNull()?.noteListComponent
-
                         navigation.pop()
                                       },
                     // NEW: Add a callback for when the user cancels.
@@ -150,7 +136,7 @@ class DefaultRootComponent(
                 DefaultNoteListComponent(
                     authManager = authManager,
                     componentContext = context,
-                    getNotesUseCase = getNotesUseCase,
+                    getAllNotesUseCase = getAllNotesUseCase,
                     addNoteUseCase = addNoteUseCase,
                     deleteNoteUseCase = deleteNoteUseCase,
                     noteExporter = noteExporter,
@@ -178,7 +164,7 @@ class DefaultRootComponent(
                         }
                     },
                     onLock = {
-                        authManager.lockApp() // Tell the manager to lock the state
+
                         navigation.bringToFront(Config.Lock) // Navigate to the Lock screen
                     },
 

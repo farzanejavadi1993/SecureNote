@@ -5,7 +5,7 @@ import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 
-class GetNotesUseCase(private val repository: NoteRepository) {
+class GetAllNotesUseCase(private val repository: NoteRepository) {
     operator fun invoke(): Flow<Resource<List<Note>>> {
         return repository.getAllNotes()
     }

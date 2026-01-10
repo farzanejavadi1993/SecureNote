@@ -1,11 +1,15 @@
 package com.farzane.securenote.presentation.root
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.farzane.securenote.presentation.detail.NoteDetailComponent
@@ -41,7 +45,7 @@ fun MasterDetailLayout(
 
         // --- Right Panel (Detail) ---
         // This panel takes up the rest of the available space.
-        androidx.compose.material3.Surface(
+        Surface(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             color = androidx.compose.material3.MaterialTheme.colorScheme.background
         ) {
@@ -59,16 +63,15 @@ fun MasterDetailLayout(
     }
 }
 
-
 /**
  * A simple placeholder screen shown when no note is selected in the detail panel.
  */
 @Composable
 fun EmptyDetailScreen(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.layout.Box(
+    Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = androidx.compose.ui.Alignment.Center
+        contentAlignment = Alignment.Center
     ) {
-        androidx.compose.material3.Text("Select a note to view details")
+       Text("Select a note to view details")
     }
 }

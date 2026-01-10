@@ -31,7 +31,6 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultNoteListComponentTest {
 
-    // --- Mocks ---
     // We mock the dependencies because we are testing the Component, not the UseCases.
     private val getAllNotesUseCase: GetAllNotesUseCase = mockk()
     private val addNoteUseCase: AddNoteUseCase = mockk()

@@ -1,11 +1,11 @@
 package com.farzane.securenote.presentation.lock
 
 import com.arkivanov.decompose.value.Value
+import kotlinx.coroutines.flow.Flow
 
 interface AuthComponent {
     val state: Value<AuthState>
-    fun onPinEnter(pin: String)
-    fun onCancel()
+    val effect: Flow<AuthEffect>
+    fun onEvent(intent: AuthIntent)
 }
-
 

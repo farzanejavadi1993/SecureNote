@@ -59,7 +59,6 @@ fun App(rootComponent: RootComponent) {
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import com.farzane.securenote.presentation.lock.LockScreen
 
 /**
@@ -77,14 +76,6 @@ fun App(rootComponent: RootComponent) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            awaitPointerEvent()
-
-                        }
-                    }
-                }
         ) {
             // Get the current navigation stack state from the RootComponent.
             val stack by rootComponent.stack.subscribeAsState()
@@ -93,12 +84,7 @@ fun App(rootComponent: RootComponent) {
             // --- Security Check: Show Lock Screen if needed ---
             // If the active screen is the Lock Screen, show it on top of everything else.
             if (activeInstance is RootComponent.Child.Lock) {
-                val lockState by activeInstance.authComponent.state.subscribeAsState()
-                LockScreen(
-                    isSetupMode = lockState.isSetupMode,
-                    onPinSuccess = { pin -> activeInstance.authComponent.onPinEnter(pin) },
-                    onCancel = { activeInstance.authComponent.onCancel() }
-                )
+                LockScreen(component = activeInstance.authComponent)
             } else {
                 // --- Main App Content (if unlocked) ---
                 // This checks the screen size to decide which layout to use.
@@ -108,7 +94,7 @@ fun App(rootComponent: RootComponent) {
                     if (isSplitView) {
                         // --- TABLET / DESKTOP LAYOUT (Master-Detail) ---
                         val activeDetailWrapper by rootComponent.activeDetail.subscribeAsState()
-                        val activeDetail = activeDetailWrapper.noteDetailComponent
+                        val activeDetailComponent = activeDetailWrapper.noteDetailComponent
 
                         // Find the NoteList component from the stack.
                         val listChild = stack.items.find {
@@ -118,19 +104,19 @@ fun App(rootComponent: RootComponent) {
                         if (listChild is RootComponent.Child.List) {
                             MasterDetailLayout(
                                 listComponent = listChild.noteListComponent,
-                                detailComponent = activeDetail
+                                detailComponent = activeDetailComponent
                             )
                         }
                     } else {
                         // --- PHONE LAYOUT (Single Pane Navigation) ---
                         Children(
-                            stack = rootComponent.stack,
+                            stack = stack,
                             animation = stackAnimation(slide())
                         ) { child ->
                             when (val instance = child.instance) {
                                 is RootComponent.Child.List -> NoteListScreen(instance.noteListComponent)
                                 is RootComponent.Child.Detail -> NoteDetailScreen(instance.noteDetailComponent)
-                                is RootComponent.Child.Lock -> {  }
+                                is RootComponent.Child.Lock -> {}
                             }
                         }
                     }

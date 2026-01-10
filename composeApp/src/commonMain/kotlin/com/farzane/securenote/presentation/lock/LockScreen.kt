@@ -13,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 
 /**
  * The UI screen for entering or creating a PIN.
@@ -24,38 +26,23 @@ import androidx.compose.ui.unit.sp
  * 2. Unlock Mode: Asks the user to enter their existing PIN.
  */
 @Composable
-fun LockScreen(
-    isSetupMode: Boolean,
-    onPinSuccess: (String) -> Unit, // Called when the PIN is set up or correctly entered.
-    onCancel: () -> Unit
-) {
-    // --- Internal State ---
-    var pin by remember { mutableStateOf("") }
-    var confirmPin by remember { mutableStateOf("") } // Used only in setup mode.
+fun LockScreen(component: AuthComponent) {
+    val state by component.state.subscribeAsState()
 
-    // Manages the flow: 0=Unlock/Enter, 1=Create PIN, 2=Confirm PIN.
-    var step by remember { mutableIntStateOf(if (isSetupMode) 1 else 0) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    // --- UI Layout ---
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // 1. Title
+        // --- Header Row ---
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Spacer on the left to keep the title centered.
-            // We make it invisible but it takes up the same space as the icon.
             Spacer(modifier = Modifier.size(48.dp))
-
-            // 1. Title
             Text(
-                text = when (step) {
+                text = when (state.step) {
                     0 -> "Enter Passcode"
                     1 -> "Create a Passcode"
                     2 -> "Confirm Passcode"
@@ -63,83 +50,33 @@ fun LockScreen(
                 },
                 style = MaterialTheme.typography.headlineMedium
             )
-
-            // Show the Close icon only in setup mode.
-            if (isSetupMode) {
-                IconButton(onClick = onCancel) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cancel PIN Setup"
-                    )
+            if (state.isSetupMode) {
+                IconButton(onClick = { component.onEvent(AuthIntent.Cancel) }) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancel")
                 }
-            } else {
-                // Another spacer on the right to keep the title centered in unlock mode.
+            }
+            else {
                 Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
-
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 2. PIN Dots Indicator
-        PinDots(
-            pin = if (step == 2)
-                confirmPin
-            else
-                pin
-        )
+        // --- Dots ---
+        PinDots(pin = state.currentInput)
 
-        // Show an error message if the PINs don't match.
-        if (error != null) {
+        // --- Error ---
+        state.error?.let {
             Spacer(modifier = Modifier.height(16.dp))
-            Text(error!!, color = MaterialTheme.colorScheme.error)
+            Text(it, color = MaterialTheme.colorScheme.error)
         }
 
         Spacer(modifier = Modifier.height(64.dp))
 
-        // 3. Number Pad for input
+        // --- Input ---
         NumberPad(
-            onNumberClick = { num ->
-                error = null // Clear previous errors on new input.
-
-                if (step == 2) {
-                    // We are in the "Confirm PIN" step.
-                    if (confirmPin.length < 4) confirmPin += num
-
-                    if (confirmPin.length == 4) {
-                        if (confirmPin == pin) {
-                            // Success! The PINs match.
-                            onPinSuccess(pin)
-                        } else {
-                            // Error: PINs do not match. Reset the process.
-                            error = "PINs do not match. Try again."
-                            pin = ""
-                            confirmPin = ""
-                            step = 1 // Go back to the "Create PIN" step.
-                        }
-                    }
-                } else {
-                    // We are in the "Unlock" or "Create PIN" step.
-                    if (pin.length < 4) pin += num
-
-                    if (pin.length == 4) {
-                        if (step == 1) {
-                            step = 2 // Move to the "Confirm PIN" step.
-                        } else {
-                            // In unlock mode, we just pass the completed PIN up for validation.
-                            onPinSuccess(pin)
-                        }
-                    }
-                }
-            },
-            onDeleteClick = {
-                // Handle the backspace button.
-                if (step == 2) {
-                    if (confirmPin.isNotEmpty()) confirmPin = confirmPin.dropLast(1)
-                } else {
-                    if (pin.isNotEmpty()) pin = pin.dropLast(1)
-                }
-            }
+            onNumberClick = { component.onEvent(AuthIntent.EnterNumber(it)) },
+            onDeleteClick = { component.onEvent(AuthIntent.DeleteNumber) }
         )
     }
 }
@@ -169,7 +106,9 @@ private fun PinDots(pin: String) {
  * A simple number pad UI with numbers 0-9 and a delete button.
  */
 @Composable
-private fun NumberPad(onNumberClick: (String) -> Unit, onDeleteClick: () -> Unit) {
+private fun NumberPad(
+    onNumberClick: (String) -> Unit,
+    onDeleteClick: () -> Unit) {
     val keys = listOf(
         listOf("1", "2", "3"),
         listOf("4", "5", "6"),
@@ -182,10 +121,12 @@ private fun NumberPad(onNumberClick: (String) -> Unit, onDeleteClick: () -> Unit
             Row(horizontalArrangement = Arrangement.spacedBy(40.dp)) {
                 row.forEach { key ->
                     when (key) {
-                        "" -> Spacer(modifier = Modifier.size(70.dp)) // Empty space for layout
+                        "" -> Spacer(modifier = Modifier.size(70.dp))
                         "DEL" -> {
                             Box(
-                                modifier = Modifier.size(70.dp).clickable { onDeleteClick() },
+                                modifier = Modifier
+                                    .size(70.dp)
+                                    .clickable { onDeleteClick() },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text("⌫", fontSize = 24.sp, fontWeight = FontWeight.Bold)

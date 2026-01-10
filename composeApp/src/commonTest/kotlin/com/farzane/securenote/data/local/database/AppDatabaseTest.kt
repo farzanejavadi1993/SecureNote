@@ -43,8 +43,12 @@ class NoteDatabaseTest {
     @Test
     fun `verifies data persistence (Insert and Read)`() = runTest {
         // Arrange
-        val note =
-            Note(id = null, title = "Integration Test", content = "Persist Me", timestamp = 123L)
+        val note = Note(
+                id = null,
+                title = "Integration Test",
+                content = "Persist Me",
+                timestamp = 123L
+            )
 
         // Act: Insert via Repository
         val insertResult = repository.addNote(note)

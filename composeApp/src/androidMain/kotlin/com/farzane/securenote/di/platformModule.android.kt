@@ -10,14 +10,6 @@ import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
 
 actual val platformModule = module {
-    /*single<AppDatabase> {
-        val context = androidContext()
-        val dbFile = context.getDatabasePath("note_database.db")
-        Room.databaseBuilder<AppDatabase>(
-            context = context,
-            name = dbFile.absolutePath
-        ).build()
-    }*/
     single<RoomDatabase.Builder<AppDatabase>> {
         getDatabaseBuilder(androidContext())
     }

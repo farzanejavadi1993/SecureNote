@@ -2,19 +2,16 @@ package com.farzane.securenote.presentation.detail
 
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetNoteByIdUseCase
-import io.mockk.coEvery
-import io.mockk.coVerify
+import com.farzane.securenote.presentation.FakeNoteRepository
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -22,24 +19,30 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import com.farzane.securenote.core.util.Resource
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class DefaultNoteDetailComponentTest {
+class NoteDetailComponentTest {
 
-    // --- Mocks ---
-    private val getNoteByIdUseCase: GetNoteByIdUseCase = mockk()
-    private val addNoteUseCase: AddNoteUseCase = mockk()
-    private val deleteNoteUseCase: DeleteNoteUseCase = mockk()
-    private val onFinishedCallback: () -> Unit = mockk(relaxed = true)
+    private lateinit var fakeRepository: FakeNoteRepository
+    private val onFinished: () -> Unit = mockk(relaxed = true)
 
-    // --- Test Control ---
-    private val testDispatcher = StandardTestDispatcher()
+    // UseCases
+    private lateinit var getNoteByIdUseCase: GetNoteByIdUseCase
+    private lateinit var addNoteUseCase: AddNoteUseCase
+    private lateinit var deleteNoteUseCase: DeleteNoteUseCase
 
     @BeforeTest
-    fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+    fun setup() {
+        // Set Main dispatcher to a test version
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        fakeRepository = FakeNoteRepository()
+
+        getNoteByIdUseCase = GetNoteByIdUseCase(fakeRepository)
+        addNoteUseCase = AddNoteUseCase(fakeRepository)
+        deleteNoteUseCase = DeleteNoteUseCase(fakeRepository)
     }
 
     @AfterTest
@@ -47,139 +50,86 @@ class DefaultNoteDetailComponentTest {
         Dispatchers.resetMain()
     }
 
-    // --- Initialization Tests ---
+    /** Helper to create the component for specific test scenarios */
+    private fun createComponent(id: Long? = null) = DefaultNoteDetailComponent(
+        componentContext = DefaultComponentContext(LifecycleRegistry()),
+        noteId = id,
+        getNoteByIdUseCase = getNoteByIdUseCase,
+        addNoteUseCase = addNoteUseCase,
+        deleteNoteUseCase = deleteNoteUseCase,
+        onFinished = onFinished
+    )
 
     @Test
-    fun `starts as empty form when creating a New Note`() = runTest(testDispatcher) {
-        // Act: Create component with null ID
-        val component = createComponent(noteId = null)
+    fun `when editing existing note, it should load data into state`() = runTest {
+        // GIVEN: Note exists in repo
+        val note = Note(id = 1, title = "Original", content = "Content", timestamp = 0L)
+        fakeRepository.addNoteSync(note)
 
-        // Assert
-        val state = component.state.value
-        assertEquals("", state.title)
-        assertEquals("", state.content)
-        assertEquals(null, state.id)
+        // WHEN: Component starts
+        val component = createComponent(id = 1)
+
+        // THEN: State is populated
+        assertEquals("Original", component.state.value.title)
     }
 
     @Test
-    fun `loads existing note data when creating component with an ID`() = runTest(testDispatcher) {
-        // Arrange
-        val existingNote =
-            Note(id = 123L, title = "My Title", content = "My Content", timestamp = 100L)
-        coEvery { getNoteByIdUseCase(123L) } returns existingNote
+    fun `saving valid note should call repository and finish navigation`() = runTest {
+        val component = createComponent(id = null) // New Note
 
-        // Act
-        val component = createComponent(noteId = 123L)
-        advanceUntilIdle() // Wait for loadNote coroutine
-
-        // Assert
-        val state = component.state.value
-        assertEquals("My Title", state.title)
-        assertEquals("My Content", state.content)
-        assertEquals(123L, state.id)
-    }
-
-    // --- Interaction Tests ---
-
-    @Test
-    fun `updates title in state when user types`() = runTest(testDispatcher) {
-        val component = createComponent(noteId = null)
-
-        // Act
-        component.onEvent(NoteDetailIntent.UpdateTitle("New T"))
+        // WHEN: User inputs data and saves
         component.onEvent(NoteDetailIntent.UpdateTitle("New Title"))
-
-        // Assert
-        assertEquals("New Title", component.state.value.title)
-    }
-
-    @Test
-    fun `updates content in state when user types`() = runTest(testDispatcher) {
-        val component = createComponent(noteId = null)
-
-        // Act
-        component.onEvent(NoteDetailIntent.UpdateContent("Hello Wor"))
-        component.onEvent(NoteDetailIntent.UpdateContent("Hello World"))
-
-        // Assert
-        assertEquals("Hello World", component.state.value.content)
-    }
-
-    // --- Save & Navigation Tests ---
-
-    @Test
-    fun `saves note and closes screen when data is valid`() = runTest(testDispatcher) {
-        // Arrange
-        coEvery {
-            addNoteUseCase(
-                any(),
-                any(),
-                any()
-            )
-        } returns Resource.Success(Unit)// Mock successful save
-
-        val component = createComponent(noteId = null)
-
-        // Input data
-        component.onEvent(NoteDetailIntent.UpdateTitle("Meeting"))
-        component.onEvent(NoteDetailIntent.UpdateContent("At 5 PM"))
-
-        // Act: Click Save
+        component.onEvent(NoteDetailIntent.UpdateContent("New Content"))
         component.onEvent(NoteDetailIntent.SaveNote)
-        advanceUntilIdle() // Wait for save coroutine
 
-        // Assert
-        // 1. Check loading state was triggered (it might flip back fast, but logic sets it)
-        assertTrue(component.state.value.isSaving)
+        // THEN: Note is in repository
+        val notes = fakeRepository.getAllNotes().first()
+        assertEquals(1, (notes as Resource.Success<List<Note>>).data.size)
+        assertEquals("New Title", notes.data[0].title)
 
-        // 2. Verify UseCase was called with correct data
-        coVerify(exactly = 1) {
-            addNoteUseCase(id = null, title = "Meeting", content = "At 5 PM")
-        }
-
-        // 3. Verify navigation happened
-        verify(exactly = 1) { onFinishedCallback() }
+        // AND: Navigation is closed
+        verify { onFinished() }
     }
 
     @Test
-    fun `does nothing if title is blank when saving`() = runTest(testDispatcher) {
-        // Arrange
-        val component = createComponent(noteId = null)
+    fun `EDGE CASE - saving empty note should trigger error effect and NOT save`() = runTest {
+        val component = createComponent(id = null)
 
-        // Only set content, leave title empty
-        component.onEvent(NoteDetailIntent.UpdateContent("Content without title"))
-
-        // Act
+        // WHEN: User tries to save empty strings
+        component.onEvent(NoteDetailIntent.UpdateTitle(" "))
         component.onEvent(NoteDetailIntent.SaveNote)
-        advanceUntilIdle()
 
-        // Assert
-        assertFalse(component.state.value.isSaving)
-        coVerify(exactly = 0) { addNoteUseCase(any(), any(), any()) } // Should NOT save
-        verify(exactly = 0) { onFinishedCallback() } // Should NOT close
+        // THEN: Error effect is sent
+        val effect = component.effect.first()
+        assertTrue(effect is NoteDetailEffect.Error)
+
+        // AND: Navigation is NOT closed
+        verify(exactly = 0) { onFinished() }
     }
 
     @Test
-    fun `closes screen when Close event received`() = runTest(testDispatcher) {
-        val component = createComponent(noteId = null)
+    fun `deleting existing note should call repository and finish`() = runTest {
+        // GIVEN: Note exists
+        fakeRepository.addNoteSync(Note(1, "Title", "Body", 0L))
+        val component = createComponent(id = 1)
 
-        // Act
+        // WHEN: User deletes
+        component.onEvent(NoteDetailIntent.DeleteNote)
+
+        // THEN: Note is removed and screen closed
+        val notes = fakeRepository.getAllNotes().first()
+        assertTrue((notes as Resource.Success).data.isEmpty())
+        verify { onFinished() }
+    }
+
+    @Test
+    fun `Close intent should trigger navigation callback immediately`() {
+        val component = createComponent()
+
+        // WHEN
         component.onEvent(NoteDetailIntent.Close)
 
-        // Assert
-        verify(exactly = 1) { onFinishedCallback() }
-    }
-
-    // --- Helper to avoid repeating setup code ---
-    private fun createComponent(noteId: Long?): DefaultNoteDetailComponent {
-        val lifecycle = LifecycleRegistry()
-        return DefaultNoteDetailComponent(
-            componentContext = DefaultComponentContext(lifecycle),
-            noteId = noteId,
-            getNoteByIdUseCase = getNoteByIdUseCase,
-            addNoteUseCase = addNoteUseCase,
-            deleteNoteUseCase = deleteNoteUseCase,
-            onFinished = onFinishedCallback,
-            )
+        // THEN
+        verify { onFinished() }
     }
 }

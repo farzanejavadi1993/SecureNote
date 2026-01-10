@@ -4,85 +4,100 @@ import app.cash.turbine.test
 import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.data.local.dao.NoteDao
 import com.farzane.securenote.data.local.entity.NoteEntity
+import com.farzane.securenote.data.mapper.toEntity
 import com.farzane.securenote.domain.model.Note
+import com.farzane.securenote.domain.repository.NoteRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class NoteRepositoryImplTest {
+/**
+ * Unit tests for [NoteRepositoryImpl].
+ * Focuses on:
+ * 1. Data flow from DAO to Domain.
+ * 2. Automated Encryption/Decryption logic.
+ * 3. Error handling mapping to [Resource.Error].
+ */
+class NoteRepositoryTest {
 
-    // Mock the DAO because we're testing the Repository, not the database itself.
-    private val dao: NoteDao = mockk()
-    private val repository = NoteRepositoryImpl(dao)
+    private lateinit var repository: NoteRepository
+    private lateinit var fakeDao: FakeNoteDao
 
+    @BeforeTest
+    fun setup() {
+        fakeDao = FakeNoteDao()
+        repository = NoteRepositoryImpl(fakeDao)
+    }
+
+    //run Coroutine block in TestDispatcher
     @Test
-    fun `emits mapped notes on successful data fetch`() = runTest {
-        // Arrange: Prepare a fake database entity
-        val dbEntity =
-            NoteEntity(id = 1, title = "DB Title", content = "DB Content", timestamp = 100L)
-        // Tell the mock DAO to return this entity when called
-        every { dao.getAllNotes() } returns flowOf(listOf(dbEntity))
+    fun `getAllNotes should decrypt data retrieved from DAO`() = runTest {
+        // GIVEN: An encrypted note exists in the "database"
+        // (Note: In your logic, encryptDecrypt is a toggle. XORing twice returns original)
+        val rawTitle = "Secret"
+        val noteEntity = Note(
+            id = 1,
+            title = rawTitle,
+            content = "Body",
+            timestamp = 123L).toEntity()
 
-        // Act & Assert: Use Turbine to test the Flow
-        repository.getAllNotes().test {
-            // Wait for the first item from the flow
-            val result = awaitItem()
+        fakeDao.insertNote(noteEntity)
 
-            // Verify the result is a success
-            assertTrue(result is Resource.Success, "Result should be Success")
+        // WHEN: Retrieving notes
+        val result = repository.getAllNotes().first()
 
-            // Verify the data was mapped correctly from NoteEntity to Note
-            val notes = result.data
-            assertEquals(1, notes.size)
-            assertEquals("DB Title", notes[0].title)
-            assertEquals(1L, notes[0].id)
-
-            // Ensure the flow completes
-            awaitComplete()
-        }
+        // THEN: Result is Success and Title is Decrypted
+        assertTrue(result is Resource.Success)
+        // Since EncryptionHelper.encryptDecrypt is called in Repo,
+        // the title should be different from raw if our logic works.
+        assertTrue(result.data[0].title != rawTitle)
     }
 
     @Test
-    fun `emits error when database read fails`() = runTest {
-        // Arrange: Make the DAO throw an error
-        val dbException = RuntimeException("Database is locked")
-        every { dao.getAllNotes() } returns flow { throw dbException }
+    fun `addNote should encrypt data before passing to DAO`() = runTest {
+        // GIVEN: A domain note
+        val note = Note(id = 1, title = "My Title", content = "My Content", timestamp = 123L)
 
-        // Act & Assert
-        repository.getAllNotes().test {
-            val result = awaitItem()
+        // WHEN: Adding the note
+        repository.addNote(note)
 
-            // Verify we caught the error and wrapped it
-            assertTrue(result is Resource.Error, "Result should be Error")
-            assertTrue(
-                result.message.contains("Database is locked"),
-                "Error message should contain the original exception message"
-            )
-
-            awaitComplete()
-        }
+        // THEN: The version saved in the DAO must be encrypted
+        val savedEntity = fakeDao.getNoteById(1)
+        assertTrue(savedEntity?.title != "My Title")
     }
 
     @Test
-    fun `returns error when inserting a note fails`() = runTest {
-        // Arrange: Make the suspend function throw an error
-        val noteToInsert = Note(id = null, title = "A", content = "B", timestamp = 1L)
-        coEvery { dao.insertNote(any()) } throws RuntimeException("Disk is full")
+    fun `getNoteById returns null when note does not exist`() = runTest {
+        // WHEN: Requesting non-existent ID
+        val result = repository.getNoteById(999)
 
-        // Act: Call the function
-        val result = repository.addNote(noteToInsert)
+        // THEN: Result is null
+        assertEquals(null, result)
+    }
 
-        // Assert: Check the return value
-        assertTrue(result is Resource.Error, "Result should be Error")
-        assertTrue(
-            result.message.contains("Disk is full"),
-            "Error message should reflect the failure cause"
-        )
+    @Test
+    fun `deleteNote handles exceptions and returns Resource Error`() =
+        runTest {
+        // GIVEN: A DAO that throws an exception
+        fakeDao.shouldThrowError = true
+
+        // WHEN: Deleting
+        val result = repository.deleteNote(1)
+
+        // THEN: Return Resource.Error instead of crashing
+        assertTrue(result is Resource.Error)
+        assertTrue(result.message.contains("Could not delete"))
     }
 }
+

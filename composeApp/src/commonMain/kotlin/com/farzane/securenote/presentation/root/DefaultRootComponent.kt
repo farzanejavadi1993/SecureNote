@@ -34,7 +34,7 @@ class DefaultRootComponent(
     componentContext: ComponentContext
 ) : RootComponent, ComponentContext by componentContext, KoinComponent {
     // --- Dependencies (from Koin) ---
-    private val authManager by inject<AuthManager>()
+    private val authManagerImpl by inject<AuthManager>()
     private val getAllNotesUseCase by inject<GetAllNotesUseCase>()
     private val addNoteUseCase by inject<AddNoteUseCase>()
     private val deleteNoteUseCase by inject<DeleteNoteUseCase>()
@@ -100,7 +100,7 @@ class DefaultRootComponent(
         lifecycle.subscribe(object : Lifecycle.Callbacks {
             override fun onResume() {
                 // Only check for auto-lock IF the user has a PIN enabled.
-                if (authManager.hasPin()) {
+                if (authManagerImpl.hasPin()) {
                     navigation.push(Config.Lock)
                 }
             }
@@ -122,7 +122,7 @@ class DefaultRootComponent(
             Config.Lock -> RootComponent.Child.Lock(
                 DefaultAuthComponent(
                     componentContext = context,
-                    authManager = authManager,
+                    authManager = authManagerImpl,
 
                     // When authenticated, just close the lock screen (pop).
                     onAuthenticated = {
@@ -135,7 +135,7 @@ class DefaultRootComponent(
 
             Config.NoteList -> RootComponent.Child.List(
                 DefaultNoteListComponent(
-                    authManager = authManager,
+                    authManager = authManagerImpl,
                     componentContext = context,
                     getAllNotesUseCase = getAllNotesUseCase,
                     addNoteUseCase = addNoteUseCase,

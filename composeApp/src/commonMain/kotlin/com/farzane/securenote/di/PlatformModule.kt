@@ -3,6 +3,7 @@ package com.farzane.securenote.di
 import com.farzane.securenote.data.local.database.AppDatabase
 import com.farzane.securenote.data.repository.NoteRepositoryImpl
 import com.farzane.securenote.domain.manager.AuthManager
+import com.farzane.securenote.domain.manager.AuthManagerImpl
 import com.farzane.securenote.domain.repository.NoteRepository
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
@@ -38,7 +39,8 @@ val appModule = module {
      * Provides the AuthManager for handling the PIN lock and security logic.
      * It's a `single` to ensure the app lock state and timer are shared globally.
      */
-    single { AuthManager(get()) }
+    single<AuthManager> { AuthManagerImpl(get()) }
+
 
 
     /**

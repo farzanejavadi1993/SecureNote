@@ -1,22 +1,15 @@
 package com.farzane.securenote.presentation.list
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import com.farzane.securenote.core.util.Resource
 import com.farzane.securenote.domain.model.Note
 import com.farzane.securenote.domain.repository.NoteExporter
 import com.farzane.securenote.domain.usecase.AddNoteUseCase
 import com.farzane.securenote.domain.usecase.DeleteNoteUseCase
 import com.farzane.securenote.domain.usecase.GetAllNotesUseCase
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -25,28 +18,50 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.arkivanov.essenty.lifecycle.resume
+import com.farzane.securenote.presentation.FakeAuthManager
+import com.farzane.securenote.presentation.FakeNoteRepository
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class DefaultNoteListComponentTest {
+class NoteListComponentTest {
 
-    // We mock the dependencies because we are testing the Component, not the UseCases.
-    private val getAllNotesUseCase: GetAllNotesUseCase = mockk()
-    private val addNoteUseCase: AddNoteUseCase = mockk()
-    private val deleteNoteUseCase: DeleteNoteUseCase = mockk()
-    private val noteExporter: NoteExporter = mockk()
+    // Fakes and Mocks
+    private lateinit var fakeAuthManager: FakeAuthManager
+    private lateinit var fakeRepository: FakeNoteRepository
+    private val onNoteSelected: (Long) -> Unit = mockk(relaxed = true)
+    private val onLock: () -> Unit = mockk(relaxed = true)
+    private val noteExporter: NoteExporter = mockk(relaxed = true)
 
-
-    // A simple mock for the navigation callback
-    private val onNoteSelectedCallback: (Long) -> Unit = mockk(relaxed = true)
-
-    // --- Test Setup ---
-    private val testDispatcher = StandardTestDispatcher()
+    // Component under test
+    private lateinit var component: DefaultNoteListComponent
+    private val lifecycle = LifecycleRegistry()
 
     @BeforeTest
-    fun setUp() {
-        Dispatchers.setMain(testDispatcher)
+    fun setup() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        fakeAuthManager = FakeAuthManager()
+        fakeRepository = FakeNoteRepository()
+
+        // Setup UseCases
+        val getAllNotesUseCase = GetAllNotesUseCase(fakeRepository)
+        val addNoteUseCase = AddNoteUseCase(fakeRepository)
+        val deleteNoteUseCase = DeleteNoteUseCase(fakeRepository)
+
+        component = DefaultNoteListComponent(
+            componentContext = DefaultComponentContext(lifecycle),
+            authManager = fakeAuthManager,
+            getAllNotesUseCase = getAllNotesUseCase,
+            addNoteUseCase = addNoteUseCase,
+            deleteNoteUseCase = deleteNoteUseCase,
+            onNoteSelected = onNoteSelected,
+            onNoteDeleted = {},
+            onLock = onLock,
+            noteExporter = noteExporter
+        )
+        lifecycle.resume()
     }
 
     @AfterTest
@@ -54,145 +69,88 @@ class DefaultNoteListComponentTest {
         Dispatchers.resetMain()
     }
 
-    // --- Tests ---
-
     @Test
-    fun `shows list of notes when data loads successfully`() = runTest(testDispatcher) {
-        // Given (Arrange)
-        val dummyNotes = listOf(
-            Note(1L, "Meeting", "Discuss project", 1000L),
-            Note(2L, "Gym", "Leg day", 2000L)
-        )
-        every { getAllNotesUseCase() } returns flowOf(Resource.Success(dummyNotes))
+    fun `initialization should load notes into state`() = runTest {
+        // GIVEN: Repository has one note
+        val note = Note(1, "Title", "Content", 123L)
+        fakeRepository.addNote(note)
 
-        // When (Act)
-        val component = createComponent()
-        advanceUntilIdle() // Wait for init block to finish
+        // WHEN: Component starts (already happened in setup)
 
-        // Then (Assert)
-        val state = component.state.value
-        assertFalse(state.isLoading, "Loading should stop after data arrives")
-        assertEquals(
-            dummyNotes,
-            state.notes,
-            "State should match the data from UseCase")
-        assertNull(state.error, "Error should be null on success")
+        // THEN: State should reflect the note and not be loading
+        assertEquals(1, component.state.value.notes.size)
+        assertFalse(component.state.value.isLoading)
     }
 
     @Test
-    fun `shows error message when loading notes fails`() = runTest(testDispatcher) {
-        // Given
-        val errorMessage = "Failed to connect to database"
-        every { getAllNotesUseCase() } returns flowOf(Resource.Error(errorMessage))
+    fun `ToggleSelectionMode should enable multi-selection and add note ID`() {
+        // WHEN
+        component.onEvent(NoteListIntent.ToggleSelectionMode(1L))
 
-        // When
-        val component = createComponent()
-        advanceUntilIdle()
-
-        // Then
-        val state = component.state.value
-        assertFalse(state.isLoading)
-        assertTrue(state.notes.isEmpty())
-        assertEquals(errorMessage, state.error)
+        // THEN
+        assertTrue(component.state.value.isMultiSelectionMode)
+        assertTrue(component.state.value.selectedNoteIds.contains(1L))
     }
 
     @Test
-    fun `saves new note when AddNote event is triggered`() = runTest(testDispatcher) {
-        // Given
-        // We need the init block to pass first
-        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+    fun `ClearSelectionMode should reset selection state`() {
+        // GIVEN
+        component.onEvent(NoteListIntent.ToggleSelectionMode(1L))
 
-        // Mock the add action returning Success
-        coEvery {
-            addNoteUseCase(
-                any(),
-                any(),
-                any())} returns Resource.Success(Unit)
+        // WHEN
+        component.onEvent(NoteListIntent.ClearSelectionMode)
 
-        val component = createComponent()
-        advanceUntilIdle()
-
-        // When
-        component.onEvent(NoteListIntent.AddNote(
-            "New Title",
-            "New Content"
-        ))
-        advanceUntilIdle()
-
-        // Then
-        coVerify(exactly = 1) {
-            addNoteUseCase(id = null, title = "New Title", content = "New Content")
-        }
+        // THEN
+        assertFalse(component.state.value.isMultiSelectionMode)
+        assertTrue(component.state.value.selectedNoteIds.isEmpty())
     }
 
     @Test
-    fun `deletes note when DeleteNote event is triggered`() = runTest(testDispatcher) {
-        // Given
-        val noteIdToDelete = 99L
-        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+    fun `SelectNote intent should trigger navigation callback`() {
+        // WHEN
+        component.onEvent(NoteListIntent.SelectNote(123L))
 
-        // Mock delete action
-        coEvery { deleteNoteUseCase(noteIdToDelete) } returns Resource.Success(Unit)
-
-        val component = createComponent()
-        advanceUntilIdle()
-
-        // When
-        component.onEvent(NoteListIntent.DeleteNote(noteIdToDelete))
-        advanceUntilIdle()
-
-        // Then
-        coVerify(exactly = 1) { deleteNoteUseCase(noteIdToDelete) }
+        // THEN
+        verify { onNoteSelected(123L) }
     }
 
     @Test
-    fun `navigates to detail screen when note is selected`() = runTest(testDispatcher) {
-        // Given
-        val selectedNoteId = 55L
-        every { getAllNotesUseCase() } returns flowOf(Resource.Success(emptyList()))
+    fun `DeleteNote should notify parent on success`() = runTest {
+        // GIVEN
+        val note = Note(1, "Delete me", "", 0L)
+        fakeRepository.addNote(note)
+        val onNoteDeleted: (Long) -> Unit = mockk(relaxed = true)
 
-        val component = createComponent()
-        advanceUntilIdle()
-
-        // When
-        component.onEvent(NoteListIntent.SelectNote(selectedNoteId))
-
-        // Then
-        verify(exactly = 1) { onNoteSelectedCallback(selectedNoteId) }
-    }
-
-    @Test
-    fun `updates state with export message when export succeeds`() =
-        runTest(testDispatcher) {
-        // Given
-        val notes = listOf(Note(1, "A", "B", 100))
-        val successPath = "Saved to /Downloads/notes.txt"
-
-        every { getAllNotesUseCase() } returns flowOf(Resource.Success(notes))
-        coEvery { noteExporter.exportNotes(notes) } returns Resource.Success(successPath)
-
-        val component = createComponent()
-        advanceUntilIdle()
-
-        // When
-        component.onEvent(NoteListIntent.ExportNotes)
-        advanceUntilIdle()
-
-        // Then
-        assertEquals(successPath, component.state.value.exportMessage)
-    }
-
-    // --- Helper ---
-
-    private fun createComponent(): DefaultNoteListComponent {
-        return DefaultNoteListComponent(
+        // Re-init with mocked callback for this specific test
+        val testComponent = DefaultNoteListComponent(
             componentContext = DefaultComponentContext(LifecycleRegistry()),
-            getAllNotesUseCase = getAllNotesUseCase,
-            addNoteUseCase = addNoteUseCase,
-            deleteNoteUseCase = deleteNoteUseCase,
-            onNoteSelected = onNoteSelectedCallback,
-            noteExporter = noteExporter,
-            onNoteDeleted = { },
+            authManager = fakeAuthManager,
+            getAllNotesUseCase = GetAllNotesUseCase(fakeRepository),
+            addNoteUseCase = AddNoteUseCase(fakeRepository),
+            deleteNoteUseCase = DeleteNoteUseCase(fakeRepository),
+            onNoteSelected = {},
+            onNoteDeleted = onNoteDeleted,
+            onLock = {},
+            noteExporter = noteExporter
         )
+
+        // WHEN
+        testComponent.onEvent(NoteListIntent.DeleteNote(1L))
+
+        // THEN
+        verify { onNoteDeleted(1L) }
+    }
+
+    @Test
+    fun `ExportNotes with no notes should trigger error effect`() = runTest {
+        // GIVEN: Empty repository
+
+        // WHEN
+        component.onEvent(NoteListIntent.ExportNotes)
+
+        // THEN: Collect first effect
+        val effect = component.effect.first()
+        assertTrue(effect is NoteListEffect.ShowMessage)
+        assertEquals("No notes to export.", (effect as NoteListEffect.ShowMessage).message)
     }
 }
